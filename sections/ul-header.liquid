@@ -12,6 +12,10 @@
   endif
 
   assign ul_logo_style = '--ul-logo-height: ' | append: ul_logo_height | append: 'px; --ul-logo-width: ' | append: ul_logo_width | append: 'px;'
+
+  assign ul_wa_number = section.settings.whatsapp_number | remove: '+' | remove: ' ' | remove: '-' | remove: '(' | remove: ')'
+  assign ul_wa_message = section.settings.whatsapp_message | url_encode
+  assign ul_wa_href = 'https://wa.me/' | append: ul_wa_number | append: '?text=' | append: ul_wa_message
 -%}
 
 <ul-header-component class="ul-header" id="UlHeader-{{ section.id }}">
@@ -56,61 +60,69 @@
       role="list"
     >
       <li class="ul-header__menu-item">
-        <a href="{{ routes.root_url }}#como-funciona" class="ul-header__menu-link">Como funciona</a>
+        <a href="{{ section.settings.menu_link_1_url | default: routes.root_url }}" class="ul-header__menu-link">{{ section.settings.menu_link_1_label }}</a>
       </li>
       <li class="ul-header__menu-item">
-        <a href="{{ routes.all_products_collection_url }}" class="ul-header__menu-link">Produtores em Destaque</a>
+        <a href="{{ section.settings.menu_link_2_url | default: routes.all_products_collection_url }}" class="ul-header__menu-link">{{ section.settings.menu_link_2_label }}</a>
       </li>
       <li class="ul-header__menu-item">
-        <a href="{{ routes.root_url }}#produtores" class="ul-header__menu-link">Produtores</a>
+        <a href="{{ section.settings.menu_link_3_url | default: '#produtores' }}" class="ul-header__menu-link">{{ section.settings.menu_link_3_label }}</a>
+      </li>
+      <li class="ul-header__menu-item">
+        <a href="{{ section.settings.menu_link_4_url | default: '#como-funciona' }}" class="ul-header__menu-link">{{ section.settings.menu_link_4_label }}</a>
       </li>
     </ul>
 
-    <a
-      href="{{ routes.cart_url }}"
-      class="ul-header__cart-link"
-      aria-label="Carrinho"
-    >
-      <svg
-        class="ul-header__cart-icon"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
+    <div class="ul-header__actions">
+      <a
+        href="{{ routes.cart_url }}"
+        class="ul-header__cart-link"
+        aria-label="Carrinho{% if cart.item_count > 0 %}, {{ cart.item_count }} {% if cart.item_count == 1 %}item{% else %}itens{% endif %}{% endif %}"
       >
-        <circle cx="8" cy="21" r="1"></circle>
-        <circle cx="19" cy="21" r="1"></circle>
-        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
-      </svg>
-      {%- if cart.item_count > 0 -%}
-        <span class="ul-header__cart-count">{{ cart.item_count }}</span>
-      {%- endif -%}
-    </a>
+        <svg
+          class="ul-header__cart-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="8" cy="21" r="1"></circle>
+          <circle cx="19" cy="21" r="1"></circle>
+          <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+        </svg>
+        {%- if cart.item_count > 0 -%}
+          <span class="ul-header__cart-count" aria-hidden="true">{{ cart.item_count }}</span>
+        {%- endif -%}
+      </a>
 
-    <a
-      href="{{ routes.account_register_url }}"
-      class="ul-btn ul-btn--solid ul-btn--sm ul-header__producer-cta"
-    >
-      {% render 'ul-icon', name: 'sprout', size: 16 %}
-      Sou Produtor
-    </a>
+      <a
+        href="{{ ul_wa_href }}"
+        class="ul-btn ul-btn--solid ul-btn--sm ul-header__producer-cta"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Sou Produtor — falar no WhatsApp (abre em nova aba)"
+      >
+        {% render 'ul-icon', name: 'sprout', size: 16 %}
+        Sou Produtor
+      </a>
 
-    <button
-      ref="hamburger"
-      type="button"
-      class="ul-header__hamburger"
-      aria-label="Abrir menu"
-      aria-expanded="false"
-      aria-controls="UlHeaderMobileMenu-{{ section.id }}"
-      on:click="/toggleMenu"
-    >
-      <span class="ul-header__hamburger-bar"></span>
-      <span class="ul-header__hamburger-bar"></span>
-      <span class="ul-header__hamburger-bar"></span>
-    </button>
+      <button
+        ref="hamburger"
+        type="button"
+        class="ul-header__hamburger"
+        aria-label="Abrir menu"
+        aria-expanded="false"
+        aria-controls="UlHeaderMobileMenu-{{ section.id }}"
+        on:click="/toggleMenu"
+      >
+        <span class="ul-header__hamburger-bar"></span>
+        <span class="ul-header__hamburger-bar"></span>
+        <span class="ul-header__hamburger-bar"></span>
+      </button>
+    </div>
   </nav>
 
   <div
@@ -123,10 +135,17 @@
     aria-hidden="true"
     inert
   >
-    <a href="{{ routes.root_url }}#como-funciona" class="ul-header__mobile-menu-link">Como funciona</a>
-    <a href="{{ routes.all_products_collection_url }}" class="ul-header__mobile-menu-link">Produtores em Destaque</a>
-    <a href="{{ routes.root_url }}#produtores" class="ul-header__mobile-menu-link">Produtores</a>
-    <a href="{{ routes.account_register_url }}" class="ul-header__mobile-menu-link ul-header__mobile-menu-link--cta">
+    <a href="{{ section.settings.menu_link_1_url | default: routes.root_url }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_1_label }}</a>
+    <a href="{{ section.settings.menu_link_2_url | default: routes.all_products_collection_url }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_2_label }}</a>
+    <a href="{{ section.settings.menu_link_3_url | default: '#produtores' }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_3_label }}</a>
+    <a href="{{ section.settings.menu_link_4_url | default: '#como-funciona' }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_4_label }}</a>
+    <a
+      href="{{ ul_wa_href }}"
+      class="ul-header__mobile-menu-link ul-header__mobile-menu-link--cta"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Sou Produtor — falar no WhatsApp (abre em nova aba)"
+    >
       {% render 'ul-icon', name: 'sprout', size: 16 %}
       Sou Produtor
     </a>
@@ -146,9 +165,9 @@
   }
 
   .ul-header__navbar {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: var(--ul-space-menu-gap);
     padding: var(--ul-space-navbar-block) var(--ul-space-navbar-inline);
     background: var(--ul-gradient-navbar);
@@ -158,6 +177,7 @@
   .ul-header__brand {
     display: flex;
     align-items: center;
+    justify-self: start;
     flex-shrink: 0;
   }
 
@@ -175,6 +195,7 @@
   .ul-header__menu {
     list-style: none;
     display: flex;
+    justify-self: center;
     gap: var(--ul-space-menu-gap);
     margin: 0;
     padding: 0;
@@ -194,6 +215,7 @@
     text-decoration: none;
     cursor: pointer;
     transition: color var(--ul-transition-fast);
+    white-space: nowrap;
   }
 
   .ul-header__menu-link:hover,
@@ -216,6 +238,14 @@
   .ul-header__menu-link:focus-visible::after {
     left: 0;
     width: 100%;
+  }
+
+  .ul-header__actions {
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: var(--ul-space-menu-gap);
+    flex-shrink: 0;
   }
 
   .ul-header__hamburger {
@@ -307,7 +337,7 @@
     width: 20px;
     height: 20px;
     border-radius: var(--ul-radius-pill);
-    background: var(--ul-color-primary);
+    background: var(--ul-color-orange);
     color: var(--ul-color-white);
     font-family: var(--ul-font-family);
     font-size: 11px;
@@ -359,6 +389,72 @@
       "step": 1,
       "unit": "px",
       "default": 42
+    },
+    {
+      "type": "header",
+      "content": "Menu"
+    },
+    {
+      "type": "text",
+      "id": "menu_link_1_label",
+      "label": "Link 1 - Texto",
+      "default": "Início"
+    },
+    {
+      "type": "url",
+      "id": "menu_link_1_url",
+      "label": "Link 1 - URL"
+    },
+    {
+      "type": "text",
+      "id": "menu_link_2_label",
+      "label": "Link 2 - Texto",
+      "default": "Produtos em destaque"
+    },
+    {
+      "type": "url",
+      "id": "menu_link_2_url",
+      "label": "Link 2 - URL"
+    },
+    {
+      "type": "text",
+      "id": "menu_link_3_label",
+      "label": "Link 3 - Texto",
+      "default": "Produtores"
+    },
+    {
+      "type": "url",
+      "id": "menu_link_3_url",
+      "label": "Link 3 - URL",
+      "info": "Enquanto a pagina /pages/produtores nao existir, aponta para a ancora #produtores. Atualize aqui quando a pagina for publicada."
+    },
+    {
+      "type": "text",
+      "id": "menu_link_4_label",
+      "label": "Link 4 - Texto",
+      "default": "Como funciona"
+    },
+    {
+      "type": "url",
+      "id": "menu_link_4_url",
+      "label": "Link 4 - URL"
+    },
+    {
+      "type": "header",
+      "content": "Sou Produtor (WhatsApp)"
+    },
+    {
+      "type": "text",
+      "id": "whatsapp_number",
+      "label": "Numero de WhatsApp",
+      "info": "Formato internacional, com ou sem simbolos (ex: +55 11 95235-3041). Simbolos +, espacos, - e parenteses sao removidos automaticamente ao montar o link.",
+      "default": "+55 11 95235-3041"
+    },
+    {
+      "type": "textarea",
+      "id": "whatsapp_message",
+      "label": "Mensagem pre-preenchida",
+      "default": "Olá! Sou produtor e gostaria de saber como vender meus produtos pela Urban Life."
     }
   ],
   "presets": [

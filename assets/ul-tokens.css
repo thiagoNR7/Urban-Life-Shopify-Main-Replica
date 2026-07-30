@@ -49,6 +49,8 @@
 
   --ul-color-white: #ffffff;
   --ul-color-white-rgb: 255 255 255;
+  --ul-color-orange: #d96f32;
+  --ul-color-orange-rgb: 217 111 50;
   --ul-color-menu-mobile-overlay: rgba(15, 31, 20, 0.96);
   --ul-color-modal-overlay: rgba(15, 31, 20, 0.75);
   --ul-color-underline: rgba(255, 255, 255, 0.75);
