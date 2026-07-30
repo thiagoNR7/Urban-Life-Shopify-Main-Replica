@@ -1,0 +1,43 @@
+{%- doc -%}
+  Renders an Urban Life button, preserving the original .btn-solid /
+  .btn-outline styles from frontend/css/style.css (.ul-btn in
+  assets/ul-base.css).
+
+  @param {string} text - Visible label.
+  @param {string} [href] - If present, renders an <a>. Otherwise renders a <button>.
+  @param {string} [style] - 'solid' (default) or 'outline'.
+  @param {string} [class] - Additional classes appended to the root element.
+  @param {string} [type] - Button type attribute when no href is given. Default 'button'.
+  @param {boolean} [new_tab] - Opens the link in a new tab when href is present.
+  @param {string} [ref] - Value for the ref attribute, used by ul-*.js components.
+
+  @example
+  {% render 'ul-button', text: 'Entrar', href: routes.account_login_url %}
+{%- enddoc -%}
+
+{%- liquid
+  assign ul_button_style = style | default: 'solid'
+  assign ul_button_classes = 'ul-btn ul-btn--' | append: ul_button_style
+  if class != blank
+    assign ul_button_classes = ul_button_classes | append: ' ' | append: class
+  endif
+-%}
+
+{%- if href != blank -%}
+  <a
+    href="{{ href }}"
+    class="{{ ul_button_classes }}"
+    {% if ref != blank %}ref="{{ ref }}"{% endif %}
+    {% if new_tab %}target="_blank" rel="noopener"{% endif %}
+  >
+    {{ text }}
+  </a>
+{%- else -%}
+  <button
+    type="{{ type | default: 'button' }}"
+    class="{{ ul_button_classes }}"
+    {% if ref != blank %}ref="{{ ref }}"{% endif %}
+  >
+    {{ text }}
+  </button>
+{%- endif -%}

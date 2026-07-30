@@ -1,0 +1,373 @@
+{{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
+{{ 'ul-base.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign ul_logo_height = section.settings.logo_height | default: 42
+  assign ul_fallback_logo_width = ul_logo_height | times: 1914 | divided_by: 2406.0 | round
+
+  if section.settings.logo != blank
+    assign ul_logo_width = ul_logo_height | times: section.settings.logo.aspect_ratio | round
+  else
+    assign ul_logo_width = ul_fallback_logo_width
+  endif
+
+  assign ul_logo_style = '--ul-logo-height: ' | append: ul_logo_height | append: 'px; --ul-logo-width: ' | append: ul_logo_width | append: 'px;'
+-%}
+
+<ul-header-component class="ul-header" id="UlHeader-{{ section.id }}">
+  <nav
+    class="ul-header__navbar"
+    aria-label="Menu principal"
+  >
+    <div class="ul-header__brand">
+      <a
+        href="{{ routes.root_url }}"
+        class="ul-header__logo-link"
+      >
+        {%- if section.settings.logo != blank -%}
+          {{
+            section.settings.logo
+            | image_url: width: 400
+            | image_tag:
+              alt: shop.name,
+              class: 'ul-header__logo',
+              height: ul_logo_height,
+              width: ul_logo_width,
+              widths: '200, 300, 400',
+              loading: 'eager',
+              style: ul_logo_style
+          }}
+        {%- else -%}
+          <img
+            src="{{ 'ul-logo.png' | asset_url }}"
+            alt="{{ shop.name }}"
+            class="ul-header__logo"
+            height="{{ ul_logo_height }}"
+            width="{{ ul_fallback_logo_width }}"
+            style="{{ ul_logo_style }}"
+            loading="eager"
+          >
+        {%- endif -%}
+      </a>
+    </div>
+
+    <ul
+      class="ul-header__menu ul-header__menu--desktop"
+      role="list"
+    >
+      <li class="ul-header__menu-item">
+        <a href="{{ routes.root_url }}#como-funciona" class="ul-header__menu-link">Como funciona</a>
+      </li>
+      <li class="ul-header__menu-item">
+        <a href="{{ routes.all_products_collection_url }}" class="ul-header__menu-link">Produtores em Destaque</a>
+      </li>
+      <li class="ul-header__menu-item">
+        <a href="{{ routes.root_url }}#produtores" class="ul-header__menu-link">Produtores</a>
+      </li>
+    </ul>
+
+    <a
+      href="{{ routes.cart_url }}"
+      class="ul-header__cart-link"
+      aria-label="Carrinho"
+    >
+      <svg
+        class="ul-header__cart-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="8" cy="21" r="1"></circle>
+        <circle cx="19" cy="21" r="1"></circle>
+        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+      </svg>
+      {%- if cart.item_count > 0 -%}
+        <span class="ul-header__cart-count">{{ cart.item_count }}</span>
+      {%- endif -%}
+    </a>
+
+    <a
+      href="{{ routes.account_register_url }}"
+      class="ul-btn ul-btn--solid ul-btn--sm ul-header__producer-cta"
+    >
+      {% render 'ul-icon', name: 'sprout', size: 16 %}
+      Sou Produtor
+    </a>
+
+    <button
+      ref="hamburger"
+      type="button"
+      class="ul-header__hamburger"
+      aria-label="Abrir menu"
+      aria-expanded="false"
+      aria-controls="UlHeaderMobileMenu-{{ section.id }}"
+      on:click="/toggleMenu"
+    >
+      <span class="ul-header__hamburger-bar"></span>
+      <span class="ul-header__hamburger-bar"></span>
+      <span class="ul-header__hamburger-bar"></span>
+    </button>
+  </nav>
+
+  <div
+    ref="mobileMenu"
+    id="UlHeaderMobileMenu-{{ section.id }}"
+    class="ul-header__mobile-menu"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Menu"
+    aria-hidden="true"
+    inert
+  >
+    <a href="{{ routes.root_url }}#como-funciona" class="ul-header__mobile-menu-link">Como funciona</a>
+    <a href="{{ routes.all_products_collection_url }}" class="ul-header__mobile-menu-link">Produtores em Destaque</a>
+    <a href="{{ routes.root_url }}#produtores" class="ul-header__mobile-menu-link">Produtores</a>
+    <a href="{{ routes.account_register_url }}" class="ul-header__mobile-menu-link ul-header__mobile-menu-link--cta">
+      {% render 'ul-icon', name: 'sprout', size: 16 %}
+      Sou Produtor
+    </a>
+  </div>
+</ul-header-component>
+
+<script
+  src="{{ 'ul-header.js' | asset_url }}"
+  type="module"
+></script>
+
+{% stylesheet %}
+  .ul-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--ul-z-navbar);
+  }
+
+  .ul-header__navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ul-space-menu-gap);
+    padding: var(--ul-space-navbar-block) var(--ul-space-navbar-inline);
+    background: var(--ul-gradient-navbar);
+    box-shadow: var(--ul-shadow-navbar);
+  }
+
+  .ul-header__brand {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .ul-header__logo-link {
+    display: inline-flex;
+  }
+
+  .ul-header__logo {
+    display: block;
+    width: var(--ul-logo-width);
+    height: var(--ul-logo-height);
+    object-fit: contain;
+  }
+
+  .ul-header__menu {
+    list-style: none;
+    display: flex;
+    gap: var(--ul-space-menu-gap);
+    margin: 0;
+    padding: 0;
+  }
+
+  .ul-header__menu-item {
+    position: relative;
+  }
+
+  .ul-header__menu-link {
+    display: inline-block;
+    position: relative;
+    padding-bottom: 4px;
+    color: var(--ul-color-white);
+    font-family: var(--ul-font-family);
+    font-weight: var(--ul-font-weight-medium);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color var(--ul-transition-fast);
+  }
+
+  .ul-header__menu-link:hover,
+  .ul-header__menu-link:focus-visible {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .ul-header__menu-link::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 0%;
+    height: 2px;
+    background: var(--ul-color-underline);
+    transition: width var(--ul-transition-fast), left var(--ul-transition-fast);
+  }
+
+  .ul-header__menu-link:hover::after,
+  .ul-header__menu-link:focus-visible::after {
+    left: 0;
+    width: 100%;
+  }
+
+  .ul-header__hamburger {
+    display: none;
+    width: 32px;
+    height: 26px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding: 0;
+  }
+
+  .ul-header__hamburger-bar {
+    width: 100%;
+    height: 3px;
+    background-color: var(--ul-color-white);
+    border-radius: 3px;
+  }
+
+  .ul-header__mobile-menu {
+    position: fixed;
+    inset: 0;
+    background: var(--ul-color-menu-mobile-overlay);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ul-space-menu-mobile-gap);
+    transform: translateY(-100%);
+    transition: transform var(--ul-transition-menu-mobile);
+    z-index: var(--ul-z-menu-mobile);
+    pointer-events: none;
+  }
+
+  .ul-header__mobile-menu--open {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .ul-header__mobile-menu-link {
+    color: var(--ul-color-white);
+    font-family: var(--ul-font-family);
+    font-size: var(--ul-font-size-menu-mobile);
+    text-decoration: none;
+  }
+
+  .ul-header__mobile-menu-link--cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ul-header__producer-cta {
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 900px) {
+    .ul-header__producer-cta {
+      display: none;
+    }
+  }
+
+  .ul-header__cart-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--ul-color-white);
+    flex-shrink: 0;
+  }
+
+  .ul-header__cart-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .ul-header__cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-primary);
+    color: var(--ul-color-white);
+    font-family: var(--ul-font-family);
+    font-size: 11px;
+    font-weight: var(--ul-font-weight-semibold);
+  }
+
+  @media (max-width: 900px) {
+    .ul-header__menu--desktop {
+      display: none;
+    }
+
+    .ul-header__hamburger {
+      display: flex;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .ul-header__navbar {
+      padding: var(--ul-space-navbar-block-mobile) var(--ul-space-navbar-inline-mobile);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Header Urban Life",
+  "tag": "header",
+  "class": "ul-header-section",
+  "enabled_on": {
+    "groups": ["header"]
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "Logo"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo",
+      "info": "Se nenhum logo for selecionado, o logo original da Urban Life (assets/ul-logo.png) e usado como fallback."
+    },
+    {
+      "type": "range",
+      "id": "logo_height",
+      "label": "Altura do logo",
+      "min": 24,
+      "max": 80,
+      "step": 1,
+      "unit": "px",
+      "default": 42
+    }
+  ],
+  "presets": [
+    {
+      "name": "Header Urban Life",
+      "settings": {
+        "logo_height": 42
+      }
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,348 @@
+{{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
+{{ 'ul-base.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign ul_footer_logo_height = section.settings.logo_height | default: 28
+  assign ul_footer_fallback_logo_width = ul_footer_logo_height | times: 1914 | divided_by: 2406.0 | round
+
+  if section.settings.logo != blank
+    assign ul_footer_logo_width = ul_footer_logo_height | times: section.settings.logo.aspect_ratio | round
+  else
+    assign ul_footer_logo_width = ul_footer_fallback_logo_width
+  endif
+
+  assign ul_footer_logo_style = 'height: ' | append: ul_footer_logo_height | append: 'px; width: ' | append: ul_footer_logo_width | append: 'px;'
+-%}
+
+<footer class="ul-footer">
+  <div class="ul-container ul-footer__inner">
+    <div class="ul-footer__grid">
+      <div class="ul-footer__brand">
+        <div class="ul-footer__logo-row">
+          {%- if section.settings.logo != blank -%}
+            {{
+              section.settings.logo
+              | image_url: width: 200
+              | image_tag: alt: shop.name, class: 'ul-footer__logo', height: ul_footer_logo_height, width: ul_footer_logo_width, style: ul_footer_logo_style, loading: 'lazy'
+            }}
+          {%- else -%}
+            <img
+              src="{{ 'ul-logo.png' | asset_url }}"
+              alt="{{ shop.name }}"
+              class="ul-footer__logo"
+              height="{{ ul_footer_logo_height }}"
+              width="{{ ul_footer_fallback_logo_width }}"
+              style="{{ ul_footer_logo_style }}"
+              loading="lazy"
+            >
+          {%- endif -%}
+          <span class="ul-footer__wordmark">Urban Life</span>
+        </div>
+        <p class="ul-footer__brand-copy">{{ section.settings.brand_copy }}</p>
+      </div>
+
+      <div class="ul-footer__col">
+        <h4 class="ul-footer__col-heading">Navegação</h4>
+        <nav class="ul-footer__nav">
+          <a href="{{ section.settings.link_baskets | default: routes.all_products_collection_url }}" class="ul-footer__link">Cestas da semana</a>
+          <a href="{{ section.settings.link_producers | default: '#produtores' }}" class="ul-footer__link">Produtores parceiros</a>
+          <a href="{{ section.settings.link_about | default: '#' }}" class="ul-footer__link">Sobre a Urban Life</a>
+          <a href="{{ section.settings.link_terms | default: '#' }}" class="ul-footer__link">Termos de Uso</a>
+          <a href="{{ section.settings.link_privacy | default: '#' }}" class="ul-footer__link">Privacidade</a>
+        </nav>
+      </div>
+
+      <div class="ul-footer__col">
+        <h4 class="ul-footer__col-heading">Entrega programada</h4>
+        <div class="ul-footer__delivery">
+          {%- for block in section.blocks -%}
+            {%- if block.type == 'delivery_zone' -%}
+              <p {{ block.shopify_attributes }}>
+                📍 {{ block.settings.zone }} <span class="ul-footer__delivery-day">→ {{ block.settings.day }}</span>
+              </p>
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+
+      <div class="ul-footer__col">
+        <h4 class="ul-footer__col-heading">Nossa missão</h4>
+        <p class="ul-footer__mission-copy">{{ section.settings.mission_copy }}</p>
+        <div class="ul-footer__mission-tags">
+          {%- for block in section.blocks -%}
+            {%- if block.type == 'mission_tag' -%}
+              <span {{ block.shopify_attributes }}>{{ block.settings.text }}</span>
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+    </div>
+
+    <div class="ul-footer__bottom">
+      <p class="ul-footer__copyright">{{ section.settings.copyright }}</p>
+      <p class="ul-footer__tagline">{{ section.settings.tagline }}</p>
+    </div>
+  </div>
+</footer>
+
+{% stylesheet %}
+  .ul-footer {
+    background: var(--ul-gradient-footer);
+    border-top: 1px solid rgb(var(--ul-color-white-rgb) / 0.1);
+    margin-top: auto;
+  }
+
+  .ul-footer__inner {
+    padding-block: 3.5rem;
+  }
+
+  .ul-footer__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .ul-footer__grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .ul-footer__logo-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .ul-footer__logo {
+    display: block;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  .ul-footer__wordmark {
+    font-family: var(--ul-font-family);
+    font-size: 1.125rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-white);
+  }
+
+  .ul-footer__brand-copy,
+  .ul-footer__mission-copy {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.625;
+    color: rgb(var(--ul-color-white-rgb) / 0.5);
+  }
+
+  .ul-footer__col-heading {
+    margin: 0 0 1.25rem;
+    font-family: var(--ul-font-family);
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-semibold);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgb(var(--ul-color-white-rgb) / 0.8);
+  }
+
+  .ul-footer__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .ul-footer__link {
+    font-size: 0.875rem;
+    color: rgb(var(--ul-color-white-rgb) / 0.5);
+    text-decoration: none;
+    transition: color var(--ul-transition-fast);
+  }
+
+  .ul-footer__link:hover,
+  .ul-footer__link:focus-visible {
+    color: rgb(var(--ul-color-white-rgb) / 0.9);
+  }
+
+  .ul-footer__delivery {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: rgb(var(--ul-color-white-rgb) / 0.5);
+  }
+
+  .ul-footer__delivery p {
+    margin: 0;
+  }
+
+  .ul-footer__delivery-day {
+    color: rgb(var(--ul-color-white-rgb) / 0.75);
+  }
+
+  .ul-footer__mission-tags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin-top: 1rem;
+  }
+
+  .ul-footer__mission-tags span {
+    font-size: 0.75rem;
+    color: rgb(var(--ul-color-white-rgb) / 0.35);
+  }
+
+  .ul-footer__bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgb(var(--ul-color-white-rgb) / 0.1);
+  }
+
+  @media (min-width: 768px) {
+    .ul-footer__bottom {
+      flex-direction: row;
+    }
+  }
+
+  .ul-footer__copyright {
+    margin: 0;
+    font-size: 0.75rem;
+    color: rgb(var(--ul-color-white-rgb) / 0.3);
+  }
+
+  .ul-footer__tagline {
+    margin: 0;
+    font-size: 0.75rem;
+    color: rgb(var(--ul-color-white-rgb) / 0.2);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Footer Urban Life",
+  "tag": "footer",
+  "class": "ul-footer-section",
+  "enabled_on": {
+    "groups": ["footer"]
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "Marca"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo",
+      "info": "Se nenhum logo for selecionado, o logo original da Urban Life (assets/ul-logo.png) é usado como fallback."
+    },
+    {
+      "type": "range",
+      "id": "logo_height",
+      "label": "Altura do logo",
+      "min": 12,
+      "max": 48,
+      "step": 1,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "textarea",
+      "id": "brand_copy",
+      "label": "Texto institucional",
+      "default": "Infraestrutura premium de alimentação consciente — conectando hortas urbanas de São Paulo a quem valoriza qualidade e rastreabilidade."
+    },
+    {
+      "type": "header",
+      "content": "Links de navegação"
+    },
+    {
+      "type": "url",
+      "id": "link_baskets",
+      "label": "Cestas da semana"
+    },
+    {
+      "type": "url",
+      "id": "link_producers",
+      "label": "Produtores parceiros"
+    },
+    {
+      "type": "url",
+      "id": "link_about",
+      "label": "Sobre a Urban Life"
+    },
+    {
+      "type": "url",
+      "id": "link_terms",
+      "label": "Termos de Uso"
+    },
+    {
+      "type": "url",
+      "id": "link_privacy",
+      "label": "Privacidade"
+    },
+    {
+      "type": "header",
+      "content": "Missão"
+    },
+    {
+      "type": "textarea",
+      "id": "mission_copy",
+      "label": "Texto da missão",
+      "default": "Conectamos você ao produtor com transparência total: 77% do valor vai direto para quem cultiva. Rastreabilidade e alimentos frescos de hortas urbanas, com uma plataforma que cuida de tudo."
+    },
+    {
+      "type": "header",
+      "content": "Rodapé inferior"
+    },
+    {
+      "type": "text",
+      "id": "copyright",
+      "label": "Copyright",
+      "default": "© 2026 Urban Life — Alimentação com propósito em São Paulo."
+    },
+    {
+      "type": "text",
+      "id": "tagline",
+      "label": "Frase final",
+      "default": "Logística consciente · Rastreabilidade total · Impacto direto"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "delivery_zone",
+      "name": "Zona de entrega",
+      "settings": [
+        { "type": "text", "id": "zone", "label": "Zona" },
+        { "type": "text", "id": "day", "label": "Dia da entrega" }
+      ]
+    },
+    {
+      "type": "mission_tag",
+      "name": "Selo da missão",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Texto" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Footer Urban Life",
+      "blocks": [
+        { "type": "delivery_zone", "settings": { "zone": "Zona Norte", "day": "quarta-feira" } },
+        { "type": "delivery_zone", "settings": { "zone": "Centro Expandido", "day": "quinta-feira" } },
+        { "type": "delivery_zone", "settings": { "zone": "Zona Oeste", "day": "terça-feira" } },
+        { "type": "delivery_zone", "settings": { "zone": "Zona Sul", "day": "sexta-feira" } },
+        { "type": "mission_tag", "settings": { "text": "🌱 Colhido hoje" } },
+        { "type": "mission_tag", "settings": { "text": "📦 Embalagem kraft premium" } },
+        { "type": "mission_tag", "settings": { "text": "🔗 QR code da horta parceira" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

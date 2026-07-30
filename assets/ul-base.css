@@ -1,0 +1,158 @@
+/*
+  Urban Life -- Base
+  Classes utilitarias reutilizaveis entre secoes/snippets ul-*.
+  Escopadas sempre por classe (nunca em seletores globais ou tags
+  soltas como *, a, button) para nao sobrescrever assets/base.css nem
+  nenhum componente nativo do Horizon.
+
+  Fonte: componentes shadcn/ui (Button, Badge, Card) do projeto React
+  original (src/components/ui/*.tsx), convertidos 1:1 para CSS.
+*/
+
+/* Botao (equivalente ao componente shadcn Button, variant "default"/"outline"). */
+.ul-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--ul-font-family);
+  font-size: 0.875rem;
+  font-weight: var(--ul-font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--ul-radius-pill);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--ul-transition-fast), opacity var(--ul-transition-fast), color var(--ul-transition-fast);
+}
+
+.ul-btn--solid {
+  background: var(--ul-color-primary);
+  color: var(--ul-color-primary-foreground);
+}
+
+.ul-btn--solid:hover,
+.ul-btn--solid:focus-visible {
+  opacity: 0.9;
+}
+
+.ul-btn--outline {
+  background: var(--ul-color-background);
+  color: var(--ul-color-foreground);
+  border: 1px solid var(--ul-color-border);
+}
+
+.ul-btn--outline:hover,
+.ul-btn--outline:focus-visible {
+  background: var(--ul-color-primary);
+  color: var(--ul-color-primary-foreground);
+  border-color: var(--ul-color-primary);
+}
+
+.ul-btn--sm {
+  height: 36px;
+  padding: 0 20px;
+  font-size: 0.875rem;
+}
+
+.ul-btn--lg {
+  height: 48px;
+  padding: 0 32px;
+  font-size: 1rem;
+  font-weight: var(--ul-font-weight-semibold);
+}
+
+.ul-btn--lg.ul-btn--medium {
+  font-weight: var(--ul-font-weight-medium);
+}
+
+/* Badge/pill (equivalente ao bg-primary/10 text-primary rounded-full usado nos eyebrows do hero). */
+.ul-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: var(--ul-radius-pill);
+  background: rgb(var(--ul-color-primary-rgb) / 0.1);
+  color: var(--ul-color-primary);
+  font-family: var(--ul-font-family);
+  font-size: 0.75rem;
+  font-weight: var(--ul-font-weight-semibold);
+}
+
+/* Icone dentro de quadrado arredondado (usado na barra de estatisticas). */
+.ul-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--ul-radius-base);
+  background: rgb(var(--ul-color-primary-rgb) / 0.1);
+  color: var(--ul-color-primary);
+}
+
+/* Eyebrow: rotulo pequeno em maiusculas acima de titulos de secao. */
+.ul-eyebrow {
+  display: block;
+  font-family: var(--ul-font-family);
+  font-size: 0.75rem;
+  font-weight: var(--ul-font-weight-semibold);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ul-color-primary);
+}
+
+/* Card generico (equivalente a rounded-2xl border border-border bg-background/bg-card). */
+.ul-card {
+  background: var(--ul-color-background);
+  border: 1px solid var(--ul-color-border);
+  border-radius: var(--ul-radius-card);
+}
+
+/*
+  Container (equivalente a .container do Tailwind: center + padding 2rem,
+  breakpoints padrao 640/768/1024/1280, com o 2xl customizado do projeto
+  original para 1400px em vez do 1536px padrao).
+*/
+.ul-container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 2rem;
+}
+
+@media (min-width: 640px) {
+  .ul-container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .ul-container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ul-container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .ul-container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .ul-container {
+    max-width: 1400px;
+  }
+}
+
+/* Urban Life Main replica - 2026-07-29 */

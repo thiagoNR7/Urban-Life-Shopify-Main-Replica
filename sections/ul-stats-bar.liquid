@@ -1,0 +1,111 @@
+{{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
+{{ 'ul-base.css' | asset_url | stylesheet_tag }}
+
+<div class="ul-stats-bar">
+  <div class="ul-container">
+    <div class="ul-stats-bar__grid">
+      {%- for block in section.blocks -%}
+        <div class="ul-stats-bar__item" {{ block.shopify_attributes }}>
+          <span class="ul-icon-badge">
+            {% render 'ul-icon', name: block.settings.icon %}
+          </span>
+          <div>
+            <p class="ul-stats-bar__number">{{ block.settings.number }}</p>
+            <p class="ul-stats-bar__label">{{ block.settings.label }}</p>
+          </div>
+        </div>
+      {%- endfor -%}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .ul-stats-bar {
+    background: var(--ul-color-background);
+    border-bottom: 1px solid var(--ul-color-border);
+  }
+
+  .ul-stats-bar__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-block: 2.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .ul-stats-bar__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .ul-stats-bar__item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .ul-stats-bar__number {
+    margin: 0;
+    font-family: var(--ul-font-family);
+    font-size: 1.5rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-stats-bar__label {
+    margin: 0;
+    font-family: var(--ul-font-family);
+    font-size: 0.875rem;
+    color: var(--ul-color-muted-foreground);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Estatísticas Urban Life",
+  "tag": "section",
+  "class": "ul-stats-bar-section",
+  "settings": [],
+  "blocks": [
+    {
+      "type": "metric",
+      "name": "Métrica",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Ícone",
+          "options": [
+            { "value": "sprout", "label": "Broto" },
+            { "value": "users", "label": "Pessoas" },
+            { "value": "truck", "label": "Caminhão" }
+          ],
+          "default": "sprout"
+        },
+        {
+          "type": "text",
+          "id": "number",
+          "label": "Número",
+          "default": "15+"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Descrição",
+          "default": "Produtores urbanos parceiros"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Estatísticas Urban Life",
+      "blocks": [
+        { "type": "metric", "settings": { "icon": "sprout", "number": "15+", "label": "Produtores urbanos parceiros" } },
+        { "type": "metric", "settings": { "icon": "users", "number": "500+", "label": "Clientes satisfeitos em SP" } },
+        { "type": "metric", "settings": { "icon": "truck", "number": "9 Zonas", "label": "Entrega programada em São Paulo" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

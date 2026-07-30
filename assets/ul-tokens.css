@@ -1,0 +1,129 @@
+/*
+  Urban Life -- Design Tokens
+  Valores convertidos com precisao a partir dos tokens HSL do projeto
+  React/Tailwind/shadcn original (src/index.css e tailwind.config.ts do
+  repo de referencia urbanlife-sp). Light mode e o unico usado em
+  producao (o dark mode do codigo-fonte nao e exposto na experiencia
+  publica e foi ignorado aqui).
+  Todas as variaveis usam o prefixo --ul- e ficam isoladas em :root,
+  sem sobrescrever nenhuma variavel ou seletor global do tema Horizon.
+*/
+
+:root {
+  /* Superficies e texto (equivalentes a --background/--foreground/--card/etc. do shadcn) */
+  --ul-color-background: #f9f8f6;
+  --ul-color-background-rgb: 249 248 246;
+  --ul-color-foreground: #211f1c;
+  --ul-color-foreground-rgb: 33 31 28;
+  --ul-color-card: #f4f3f0;
+  --ul-color-card-foreground: #211f1c;
+
+  /* Marca: primary === accent no projeto original (mesmo HSL 152 96% 21%) */
+  --ul-color-primary: #026939;
+  --ul-color-primary-rgb: 2 105 57;
+  --ul-color-primary-foreground: #ffffff;
+  --ul-color-accent: #026939;
+  --ul-color-accent-foreground: #ffffff;
+
+  --ul-color-secondary: #ede9e3;
+  --ul-color-secondary-rgb: 237 233 227;
+  --ul-color-secondary-foreground: #3d3834;
+
+  --ul-color-muted: #e9e6e2;
+  --ul-color-muted-foreground: #7c7568;
+  --ul-color-muted-foreground-rgb: 124 117 110;
+
+  --ul-color-border: #e1dfda;
+  --ul-color-border-rgb: 225 223 218;
+  --ul-color-destructive: #ef4444;
+
+  /* Tokens de marca adicionais (olive/cream/earth/sage/bark) */
+  --ul-color-olive: #026939;
+  --ul-color-olive-light: #109357;
+  --ul-color-cream: #f9f8f6;
+  --ul-color-cream-dark: #f0eeeb;
+  --ul-color-earth: #026939;
+  --ul-color-earth-light: #109357;
+  --ul-color-sage: #c0c4ab;
+  --ul-color-bark: #352e27;
+
+  --ul-color-white: #ffffff;
+  --ul-color-white-rgb: 255 255 255;
+  --ul-color-menu-mobile-overlay: rgba(15, 31, 20, 0.96);
+  --ul-color-modal-overlay: rgba(15, 31, 20, 0.75);
+  --ul-color-underline: rgba(255, 255, 255, 0.75);
+
+  /* Gradientes literais (header/footer usam cores fixas de marca, fora da escala de tokens) */
+  --ul-gradient-navbar: linear-gradient(90deg, #0f1f14, #1b5e20);
+  --ul-gradient-footer: linear-gradient(135deg, #0f1a0c, #1a3a14);
+
+  /* Tipografia (fonte unica do projeto, sem web fonts) */
+  --ul-font-family: "Segoe UI", sans-serif;
+  --ul-font-weight-regular: 400;
+  --ul-font-weight-medium: 500;
+  --ul-font-weight-semibold: 600;
+  --ul-font-weight-bold: 700;
+
+  /* Espacamento usado no header */
+  --ul-space-navbar-block: 18px;
+  --ul-space-navbar-inline: 60px;
+  --ul-space-navbar-block-mobile: 14px;
+  --ul-space-navbar-inline-mobile: 20px;
+  --ul-space-menu-gap: 36px;
+  --ul-space-menu-mobile-gap: 28px;
+
+  /* Espacamento reservado para secoes de conteudo (hero, como-funciona, produtores, impacto, produtos) */
+  --ul-space-secao-block: 60px;
+  --ul-space-secao-inline: 80px;
+  --ul-space-hero-gap: 60px;
+  --ul-space-grid-gap-sm: 24px;
+  --ul-space-grid-gap-md: 28px;
+  --ul-space-grid-gap-lg: 32px;
+  --ul-space-grid-gap-xl: 36px;
+
+  /* Bordas e raios (radius base do shadcn e 0.75rem; pills/badges/botoes sao sempre full-round) */
+  --ul-radius-base: 0.75rem;
+  --ul-radius-pill: 9999px;
+  --ul-radius-lg: 24px;
+  --ul-radius-md: 22px;
+  --ul-radius-card: 20px;
+  --ul-radius-image: 16px;
+
+  /* Sombras: cada valor e literal e especifico do componente de origem */
+  --ul-shadow-navbar: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --ul-shadow-btn-hover: 0 8px 20px rgba(2, 105, 57, 0.35);
+  --ul-shadow-card-sm: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --ul-shadow-card-md: 0 12px 30px rgba(0, 0, 0, 0.06);
+  --ul-shadow-card-md-hover: 0 18px 40px rgba(0, 0, 0, 0.1);
+  --ul-shadow-carousel: 0 20px 40px rgba(0, 0, 0, 0.15);
+  --ul-shadow-toast: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+  /* Transicoes */
+  --ul-transition-fast: 0.3s ease;
+  --ul-transition-menu-mobile: 0.4s ease;
+  --ul-transition-slide: 0.7s ease;
+  --ul-transition-shine: 0.6s ease;
+
+  /* Camadas (z-index) */
+  --ul-z-navbar: 100;
+  --ul-z-menu-mobile: 999;
+  --ul-z-toast: 9999;
+  --ul-z-modal: 9999;
+}
+
+/*
+  Breakpoints do projeto original (documentacao apenas).
+  Custom properties do CSS nao funcionam dentro da condicao de um
+  @media, entao estes valores sao aplicados literalmente em cada
+  bloco de stylesheet e devem ser mantidos em sincronia com qualquer
+  matchMedia() usado em assets/ul-*.js:
+
+  600px  -> ajustes finos mobile (navbar padding, tipografia do hero)
+  900px  -> colapso do menu desktop para o menu hamburguer
+  1024px -> breakpoint lg do Tailwind (grid do hero, ordem dos blocos)
+
+  Nao existe no projeto original uma classe de container com max-width
+  central alem da propria .container do Tailwind (max-width 1400px no
+  breakpoint 2xl, padding 2rem, centralizado). Cada secao nova deve
+  replicar esse container em vez de inventar uma abstracao diferente.
+*/

@@ -1,0 +1,550 @@
+{{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
+{{ 'ul-base.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign ul_hero_badge = section.settings.badge_text
+  assign ul_hero_heading = section.settings.heading
+  assign ul_hero_heading_highlight = section.settings.heading_highlight
+  assign ul_hero_subheading = section.settings.subheading
+  assign ul_hero_button_label = section.settings.button_label
+  assign ul_hero_button_link = section.settings.button_link | default: routes.all_products_collection_url
+  assign ul_hero_button_label_2 = section.settings.button_label_2
+  assign ul_hero_button_link_2 = section.settings.button_link_2 | default: routes.root_url
+  assign ul_hero_social_count = section.settings.social_proof_count
+  assign ul_hero_social_text = section.settings.social_proof_text
+  assign ul_hero_media_label = section.settings.media_label
+  assign ul_hero_fallback_images = 'ul-hero-carousel-1.jpg|ul-hero-carousel-2.jpg|ul-hero-carousel-3.jpg' | split: '|'
+  assign ul_hero_image_blocks = section.blocks | where: 'type', 'image'
+  assign ul_hero_avatar_blocks = section.blocks | where: 'type', 'avatar'
+  assign ul_hero_default_alt = ul_hero_heading | default: 'Urban Life'
+
+  if ul_hero_heading_highlight != blank and ul_hero_heading contains ul_hero_heading_highlight
+    assign ul_hero_highlight_wrapped = '<span class="ul-hero__highlight">' | append: ul_hero_heading_highlight | append: '</span>'
+    assign ul_hero_heading_html = ul_hero_heading | replace: ul_hero_heading_highlight, ul_hero_highlight_wrapped
+  else
+    assign ul_hero_heading_html = ul_hero_heading
+  endif
+-%}
+
+<section class="ul-hero">
+  <div class="ul-container">
+    <div class="ul-hero__grid">
+      <div class="ul-hero__text">
+        {%- if ul_hero_badge != blank -%}
+          <span class="ul-badge ul-hero__badge">
+            {% render 'ul-icon', name: 'leaf', size: 14 %}
+            {{ ul_hero_badge }}
+          </span>
+        {%- endif -%}
+
+        {%- if ul_hero_heading != blank -%}
+          <h1 class="ul-hero__heading">{{ ul_hero_heading_html }}</h1>
+        {%- endif -%}
+
+        {%- if ul_hero_subheading != blank -%}
+          <p class="ul-hero__subheading">{{ ul_hero_subheading }}</p>
+        {%- endif -%}
+
+        {%- if ul_hero_button_label != blank or ul_hero_button_label_2 != blank -%}
+          <div class="ul-hero__actions">
+            {%- if ul_hero_button_label != blank -%}
+              <a href="{{ ul_hero_button_link }}" class="ul-btn ul-btn--solid ul-btn--lg">
+                {{ ul_hero_button_label }}
+                {% render 'ul-icon', name: 'arrow-right', size: 16 %}
+              </a>
+            {%- endif -%}
+
+            {%- if ul_hero_button_label_2 != blank -%}
+              <a href="{{ ul_hero_button_link_2 }}" class="ul-btn ul-btn--solid ul-btn--lg ul-btn--medium">
+                {{ ul_hero_button_label_2 }}
+              </a>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+
+        {%- if ul_hero_avatar_blocks.size > 0 -%}
+          <div class="ul-hero__social">
+            <div class="ul-hero__avatars">
+              {%- for block in ul_hero_avatar_blocks -%}
+                <span
+                  class="ul-hero__avatar"
+                  style="background-color: {{ block.settings.color }};"
+                  {{ block.shopify_attributes }}
+                >{{ block.settings.initial }}</span>
+              {%- endfor -%}
+            </div>
+            <p class="ul-hero__social-text">
+              <strong>{{ ul_hero_social_count }}</strong> {{ ul_hero_social_text }}
+            </p>
+          </div>
+        {%- endif -%}
+      </div>
+
+      <ul-hero-component class="ul-hero__media" id="UlHero-{{ section.id }}">
+        <div
+          class="ul-hero__frame"
+          role="group"
+          aria-roledescription="carousel"
+          aria-label="{{ ul_hero_default_alt }}"
+        >
+          {%- for block in ul_hero_image_blocks -%}
+            {%- liquid
+              assign ul_hero_image = block.settings.image
+              assign ul_hero_fallback_index = forloop.index0 | modulo: ul_hero_fallback_images.size
+              assign ul_hero_fallback_src = ul_hero_fallback_images[ul_hero_fallback_index]
+              assign ul_hero_alt = block.settings.alt | default: ul_hero_default_alt
+              assign ul_hero_loading = 'lazy'
+              if forloop.first
+                assign ul_hero_loading = 'eager'
+              endif
+            -%}
+            <div
+              class="ul-hero__slide{% if forloop.first %} ul-hero__slide--active{% endif %}"
+              ref="slides[]"
+              aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}"
+              {{ block.shopify_attributes }}
+            >
+              {%- if ul_hero_image != blank -%}
+                {{
+                  ul_hero_image
+                  | image_url: width: 800
+                  | image_tag:
+                    alt: ul_hero_alt,
+                    class: 'ul-hero__image',
+                    loading: ul_hero_loading,
+                    widths: '400, 600, 800',
+                    sizes: '(min-width: 1024px) 384px, 320px'
+                }}
+              {%- else -%}
+                <img
+                  src="{{ ul_hero_fallback_src | asset_url }}"
+                  alt="{{ ul_hero_alt }}"
+                  class="ul-hero__image"
+                  loading="{{ ul_hero_loading }}"
+                  width="800"
+                  height="1000"
+                >
+              {%- endif -%}
+            </div>
+          {%- endfor -%}
+
+          <div class="ul-hero__overlay" aria-hidden="true"></div>
+
+          {%- if ul_hero_media_label != blank -%}
+            <div class="ul-hero__label">
+              <p>{{ ul_hero_media_label }}</p>
+            </div>
+          {%- endif -%}
+        </div>
+
+        {%- if ul_hero_image_blocks.size > 1 -%}
+          <div class="ul-hero__dots" role="tablist" aria-label="Selecionar imagem do carrossel">
+            {%- for block in ul_hero_image_blocks -%}
+              <button
+                type="button"
+                class="ul-hero__dot{% if forloop.first %} ul-hero__dot--active{% endif %}"
+                ref="dots[]"
+                role="tab"
+                aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                aria-label="Ir para a imagem {{ forloop.index }}"
+                on:click="/select/{{ forloop.index0 }}"
+              ></button>
+            {%- endfor -%}
+          </div>
+        {%- endif -%}
+      </ul-hero-component>
+    </div>
+  </div>
+</section>
+
+<script src="{{ 'ul-hero.js' | asset_url }}" type="module"></script>
+
+{% stylesheet %}
+  .ul-hero {
+    background: var(--ul-color-background);
+    border-bottom: 1px solid var(--ul-color-border);
+    min-height: 88vh;
+    display: flex;
+    align-items: center;
+  }
+
+  .ul-hero .ul-container {
+    padding-block: 5rem;
+  }
+
+  .ul-hero__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 3rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ul-hero__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+    }
+  }
+
+  .ul-hero__text {
+    max-width: 36rem;
+    margin-inline: auto;
+    order: 2;
+    text-align: center;
+  }
+
+  @media (min-width: 1024px) {
+    .ul-hero__text {
+      order: 1;
+      margin-inline: 0;
+      text-align: left;
+    }
+  }
+
+  .ul-hero__badge {
+    margin-bottom: 1.5rem;
+  }
+
+  .ul-hero__heading {
+    margin: 0 0 1.5rem;
+    font-family: var(--ul-font-family);
+    font-size: 2.25rem;
+    font-weight: var(--ul-font-weight-bold);
+    line-height: 1.15;
+    color: var(--ul-color-foreground);
+  }
+
+  @media (min-width: 768px) {
+    .ul-hero__heading {
+      font-size: 3rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ul-hero__heading {
+      font-size: 3.25rem;
+    }
+  }
+
+  .ul-hero__heading .ul-hero__highlight {
+    color: var(--ul-color-primary);
+  }
+
+  .ul-hero__subheading {
+    margin: 0 auto 2.5rem;
+    max-width: 28rem;
+    font-size: 1rem;
+    line-height: 1.625;
+    color: var(--ul-color-muted-foreground);
+  }
+
+  @media (min-width: 1024px) {
+    .ul-hero__subheading {
+      margin-inline: 0;
+    }
+  }
+
+  .ul-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ul-hero__actions {
+      justify-content: flex-start;
+    }
+  }
+
+  .ul-hero__social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ul-hero__social {
+      justify-content: flex-start;
+    }
+  }
+
+  .ul-hero__avatars {
+    display: flex;
+  }
+
+  .ul-hero__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-left: -8px;
+    border-radius: var(--ul-radius-pill);
+    border: 2px solid var(--ul-color-background);
+    color: var(--ul-color-white);
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-medium);
+  }
+
+  .ul-hero__avatar:first-child {
+    margin-left: 0;
+  }
+
+  .ul-hero__social-text {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-hero__social-text strong {
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-hero__media {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    order: 1;
+  }
+
+  @media (min-width: 1024px) {
+    .ul-hero__media {
+      order: 2;
+    }
+  }
+
+  .ul-hero__frame {
+    position: relative;
+    width: 100%;
+    max-width: 24rem;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--ul-radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .ul-hero__slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+  }
+
+  .ul-hero__slide--active {
+    opacity: 1;
+  }
+
+  .ul-hero__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ul-hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.2), transparent 60%);
+    pointer-events: none;
+  }
+
+  .ul-hero__label {
+    position: absolute;
+    left: 1rem;
+    bottom: 1rem;
+    padding: 6px 12px;
+    border-radius: var(--ul-radius-pill);
+    background: rgb(var(--ul-color-background-rgb) / 0.9);
+    backdrop-filter: blur(4px);
+  }
+
+  .ul-hero__label p {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-medium);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-hero__dots {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .ul-hero__dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    padding: 0;
+    border: none;
+    border-radius: var(--ul-radius-pill);
+    background: rgb(var(--ul-color-muted-foreground-rgb) / 0.25);
+    cursor: pointer;
+    transition: width 0.3s ease, background-color 0.3s ease;
+  }
+
+  .ul-hero__dot--active {
+    width: 2rem;
+    height: 0.625rem;
+    background: var(--ul-color-primary);
+  }
+
+  .ul-hero__dot:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ul-hero__slide,
+    .ul-hero__dot {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Hero Urban Life",
+  "tag": "section",
+  "class": "ul-hero-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Conteúdo"
+    },
+    {
+      "type": "text",
+      "id": "badge_text",
+      "label": "Badge",
+      "default": "Hortas urbanas de São Paulo"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Título",
+      "default": "Alimentos frescos, direto da horta para você."
+    },
+    {
+      "type": "text",
+      "id": "heading_highlight",
+      "label": "Trecho destacado do título",
+      "info": "Deve ser um trecho exato do título acima; será colorido em verde.",
+      "default": "direto da horta"
+    },
+    {
+      "type": "textarea",
+      "id": "subheading",
+      "label": "Subtítulo",
+      "default": "Uma experiência premium de alimentação consciente. Seleção curada da semana, entregue com cuidado e rastreabilidade total."
+    },
+    {
+      "type": "header",
+      "content": "Botão principal"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Texto do botão",
+      "default": "Ver seleção da semana"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Link do botão"
+    },
+    {
+      "type": "header",
+      "content": "Botão secundário"
+    },
+    {
+      "type": "text",
+      "id": "button_label_2",
+      "label": "Texto do botão secundário",
+      "default": "Como funciona"
+    },
+    {
+      "type": "url",
+      "id": "button_link_2",
+      "label": "Link do botão secundário"
+    },
+    {
+      "type": "header",
+      "content": "Prova social"
+    },
+    {
+      "type": "text",
+      "id": "social_proof_count",
+      "label": "Número em destaque",
+      "default": "500+"
+    },
+    {
+      "type": "text",
+      "id": "social_proof_text",
+      "label": "Texto",
+      "default": "clientes em São Paulo"
+    },
+    {
+      "type": "header",
+      "content": "Imagem"
+    },
+    {
+      "type": "text",
+      "id": "media_label",
+      "label": "Selo sobre a imagem",
+      "default": "Seleção fresca da semana"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "image",
+      "name": "Imagem",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Imagem",
+          "info": "Se nenhuma imagem for selecionada, uma das imagens originais da Urban Life (assets/ul-hero-carousel-1/2/3.jpg) é usada como fallback."
+        },
+        {
+          "type": "text",
+          "id": "alt",
+          "label": "Texto alternativo"
+        }
+      ]
+    },
+    {
+      "type": "avatar",
+      "name": "Avatar (prova social)",
+      "settings": [
+        {
+          "type": "text",
+          "id": "initial",
+          "label": "Inicial"
+        },
+        {
+          "type": "color",
+          "id": "color",
+          "label": "Cor de fundo",
+          "default": "#6B8F4E"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hero Urban Life",
+      "blocks": [
+        { "type": "image" },
+        { "type": "image" },
+        { "type": "image" },
+        { "type": "avatar", "settings": { "initial": "A", "color": "#6B8F4E" } },
+        { "type": "avatar", "settings": { "initial": "M", "color": "#4E6B3A" } },
+        { "type": "avatar", "settings": { "initial": "C", "color": "#3A5228" } },
+        { "type": "avatar", "settings": { "initial": "R", "color": "#5A7A40" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

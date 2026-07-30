@@ -1,0 +1,66 @@
+/*
+  Urban Life -- Animacoes globais
+  Keyframes extraidos literalmente de src/index.css do projeto React de
+  referencia (fade-in-up / fade-in / slide-in-right + classes de delay).
+  Usadas para o scroll-reveal de "Como funciona" e "Entrega por regiao"
+  (no React, disparado via IntersectionObserver; aqui via a classe
+  ".ul-in-view", adicionada por JS quando a secao entra na viewport).
+
+  Prefixo ul- para nao colidir com nenhuma keyframe/classe do Horizon ou
+  de apps instalados.
+*/
+
+@keyframes ul-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ul-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ul-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ul-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.ul-reveal.ul-in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ul-reveal-delay-1 { transition-delay: 0.15s; }
+.ul-reveal-delay-2 { transition-delay: 0.3s; }
+.ul-reveal-delay-3 { transition-delay: 0.45s; }
+.ul-reveal-delay-4 { transition-delay: 0.6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ul-reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}

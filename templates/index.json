@@ -1,0 +1,67 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */{
+  "sections": {
+    "ul_hero": {
+      "type": "ul-hero",
+      "blocks": {
+        "image_1": { "type": "image", "settings": {} },
+        "image_2": { "type": "image", "settings": {} },
+        "image_3": { "type": "image", "settings": {} },
+        "avatar_1": { "type": "avatar", "settings": { "initial": "A", "color": "#6B8F4E" } },
+        "avatar_2": { "type": "avatar", "settings": { "initial": "M", "color": "#4E6B3A" } },
+        "avatar_3": { "type": "avatar", "settings": { "initial": "C", "color": "#3A5228" } },
+        "avatar_4": { "type": "avatar", "settings": { "initial": "R", "color": "#5A7A40" } }
+      },
+      "block_order": ["image_1", "image_2", "image_3", "avatar_1", "avatar_2", "avatar_3", "avatar_4"],
+      "name": "t:names.hero",
+      "settings": {}
+    },
+    "ul_stats_bar": {
+      "type": "ul-stats-bar",
+      "blocks": {
+        "metric_1": { "type": "metric", "settings": { "icon": "sprout", "number": "15+", "label": "Produtores urbanos parceiros" } },
+        "metric_2": { "type": "metric", "settings": { "icon": "users", "number": "500+", "label": "Clientes satisfeitos em SP" } },
+        "metric_3": { "type": "metric", "settings": { "icon": "truck", "number": "9 Zonas", "label": "Entrega programada em São Paulo" } }
+      },
+      "block_order": ["metric_1", "metric_2", "metric_3"],
+      "name": "t:names.section",
+      "settings": {}
+    },
+    "ul_how_it_works": {
+      "type": "ul-how-it-works",
+      "blocks": {
+        "step_1": { "type": "step", "settings": { "icon": "sprout", "title": "Escolha sua cesta", "description": "Selecione o tamanho ideal para o seu consumo semanal. Seleção curada de alimentos frescos de hortas urbanas." } },
+        "step_2": { "type": "step", "settings": { "icon": "truck", "title": "Agendamos sua entrega", "description": "Entrega programada por região. Sem surpresas — você sabe exatamente quando vai chegar." } },
+        "step_3": { "type": "step", "settings": { "icon": "home", "title": "Receba em casa", "description": "Embalagem kraft premium, organizada e minimalista. Fresco, rastreável e pronto para a semana." } }
+      },
+      "block_order": ["step_1", "step_2", "step_3"],
+      "name": "t:names.section",
+      "settings": {}
+    },
+    "ul_delivery_regions": {
+      "type": "ul-delivery-regions",
+      "blocks": {
+        "cluster_1": { "type": "cluster", "settings": { "zone": "Zona Norte", "horta": "Horta Zona Norte", "day": "Quarta-feira", "radius": "10 km", "neighborhoods": "Santana, Tucuruvi, Tremembé, Vila Maria, Casa Verde, Limão, Brasilândia" } },
+        "cluster_2": { "type": "cluster", "settings": { "zone": "Centro Expandido", "horta": "Horta Centro SP", "day": "Quinta-feira", "radius": "8 km", "neighborhoods": "Pinheiros, Vila Madalena, Consolação, Santa Cecília, Bela Vista, Higienópolis, Perdizes" } },
+        "cluster_3": { "type": "cluster", "settings": { "zone": "Zona Oeste", "horta": "Horta Zona Oeste", "day": "Terça-feira", "radius": "9 km", "neighborhoods": "Butantã, Lapa, Jaguaré, Vila Leopoldina, Vila Romana, Alto da Lapa" } },
+        "cluster_4": { "type": "cluster", "settings": { "zone": "Zona Sul", "horta": "Horta Zona Sul", "day": "Sexta-feira", "radius": "12 km", "neighborhoods": "Vila Mariana, Saúde, Moema, Ibirapuera, Jabaquara, Santo André" } }
+      },
+      "block_order": ["cluster_1", "cluster_2", "cluster_3", "cluster_4"],
+      "name": "t:names.section",
+      "settings": {}
+    }
+  },
+  "order": [
+    "ul_hero",
+    "ul_stats_bar",
+    "ul_how_it_works",
+    "ul_delivery_regions"
+  ]
+}

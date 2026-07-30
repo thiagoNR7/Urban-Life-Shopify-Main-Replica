@@ -1,0 +1,64 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "type": "footer",
+  "name": "t:names.footer",
+  "sections": {
+    "footer_section": {
+      "type": "ul-footer",
+      "blocks": {
+        "delivery_zone_1": {
+          "type": "delivery_zone",
+          "settings": { "zone": "Zona Norte", "day": "quarta-feira" }
+        },
+        "delivery_zone_2": {
+          "type": "delivery_zone",
+          "settings": { "zone": "Centro Expandido", "day": "quinta-feira" }
+        },
+        "delivery_zone_3": {
+          "type": "delivery_zone",
+          "settings": { "zone": "Zona Oeste", "day": "terça-feira" }
+        },
+        "delivery_zone_4": {
+          "type": "delivery_zone",
+          "settings": { "zone": "Zona Sul", "day": "sexta-feira" }
+        },
+        "mission_tag_1": {
+          "type": "mission_tag",
+          "settings": { "text": "🌱 Colhido hoje" }
+        },
+        "mission_tag_2": {
+          "type": "mission_tag",
+          "settings": { "text": "📦 Embalagem kraft premium" }
+        },
+        "mission_tag_3": {
+          "type": "mission_tag",
+          "settings": { "text": "🔗 QR code da horta parceira" }
+        }
+      },
+      "block_order": [
+        "delivery_zone_1",
+        "delivery_zone_2",
+        "delivery_zone_3",
+        "delivery_zone_4",
+        "mission_tag_1",
+        "mission_tag_2",
+        "mission_tag_3"
+      ],
+      "name": "t:names.footer",
+      "settings": {
+        "logo_height": 16
+      }
+    }
+  },
+  "order": [
+    "footer_section"
+  ]
+}

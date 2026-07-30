@@ -1,0 +1,61 @@
+{%- doc -%}
+  Renders a small line-style icon used across the ul-* Urban Life
+  sections (stats bar, badges, how-it-works, delivery regions).
+
+  @param {string} name - One of: leaf, sprout, truck, home, users, map-pin, clock, arrow-right.
+  @param {string} [class] - Additional classes appended to the svg element.
+  @param {number} [size] - Width/height in px. Default 24.
+
+  @example
+  {% render 'ul-icon', name: 'leaf', class: 'ul-stats__icon' %}
+{%- enddoc -%}
+
+{%- liquid
+  assign ul_icon_size = size | default: 24
+-%}
+
+<svg
+  class="ul-icon {{ class }}"
+  width="{{ ul_icon_size }}"
+  height="{{ ul_icon_size }}"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  {%- case name -%}
+    {%- when 'leaf' -%}
+      <path d="M4 20c8 0 14-6 14-14V4h-2C8 4 4 10 4 18v2Z"></path>
+      <path d="M4 20c4-4 8-8 14-14"></path>
+    {%- when 'sprout' -%}
+      <path d="M12 20v-8"></path>
+      <path d="M12 12c0-4-3-6-7-6 0 4 3 7 7 6Z"></path>
+      <path d="M12 12c0-4 3-6 7-6 0 4-3 7-7 6Z"></path>
+    {%- when 'truck' -%}
+      <rect x="1" y="8" width="13" height="9" rx="1"></rect>
+      <path d="M14 11h4l3 3v3h-7z"></path>
+      <circle cx="6" cy="19" r="1.6"></circle>
+      <circle cx="17.5" cy="19" r="1.6"></circle>
+    {%- when 'home' -%}
+      <path d="M4 11 12 4l8 7"></path>
+      <path d="M6 10v9h12v-9"></path>
+    {%- when 'users' -%}
+      <circle cx="9" cy="8" r="3.2"></circle>
+      <path d="M3.5 19c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path>
+      <circle cx="17" cy="9" r="2.6"></circle>
+      <path d="M15.2 13.6c2.6.3 4.3 2.3 4.3 5.1"></path>
+    {%- when 'map-pin' -%}
+      <path d="M12 21s7-6.3 7-11.5A7 7 0 0 0 5 9.5C5 14.7 12 21 12 21Z"></path>
+      <circle cx="12" cy="9.5" r="2.3"></circle>
+    {%- when 'clock' -%}
+      <circle cx="12" cy="12" r="9"></circle>
+      <path d="M12 7v5l3.5 2"></path>
+    {%- when 'arrow-right' -%}
+      <path d="M5 12h14"></path>
+      <path d="m13 5 7 7-7 7"></path>
+  {%- endcase -%}
+</svg>
