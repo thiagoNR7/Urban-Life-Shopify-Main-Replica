@@ -1,0 +1,11 @@
+{
+  "sections": {
+    "main": {
+      "type": "ul-producer-profile",
+      "settings": {}
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

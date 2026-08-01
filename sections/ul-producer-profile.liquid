@@ -1,0 +1,311 @@
+{%- comment -%}
+  Perfil individual do produtor (Etapa 2 - Urban Life).
+  Renderizado via templates/metaobject/produtor.json - o objeto atual da
+  Storefront Page do metaobject `produtor` fica disponivel globalmente
+  como `metaobject` (ver documentacao da Etapa 2).
+
+  A relacao com produtos/cestas (metafield custom.produtor, "produtos
+  relacionados", escolha da cesta) e conteudo da Etapa 3 - propositalmente
+  fora de escopo aqui.
+{%- endcomment -%}
+
+{{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
+{{ 'ul-base.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign producer = metaobject
+  assign cover_image = producer.foto_capa.reference.image
+  assign profile_image = producer.foto_perfil.reference.image
+-%}
+
+<section class="ul-producer-profile">
+  <div class="ul-producer-profile__cover">
+    {%- if cover_image != blank -%}
+      {{
+        cover_image
+        | image_url: width: 1600
+        | image_tag:
+          alt: producer.nome.value,
+          loading: 'eager',
+          sizes: '100vw',
+          widths: '800, 1200, 1600',
+          class: 'ul-producer-profile__cover-image'
+      }}
+    {%- else -%}
+      <span class="ul-producer-profile__cover-fallback">
+        {% render 'ul-icon', name: 'sprout', size: 64 %}
+      </span>
+    {%- endif -%}
+  </div>
+
+  <div class="ul-container ul-producer-profile__content">
+    <a href="{{ pages.produtores.url | default: '/pages/produtores' }}" class="ul-producer-profile__back">
+      <span class="ul-producer-profile__back-icon">{% render 'ul-icon', name: 'arrow-right', size: 16 %}</span>
+      Voltar para Produtores
+    </a>
+
+    <div class="ul-producer-profile__header">
+      <span class="ul-producer-profile__avatar">
+        {%- if profile_image != blank -%}
+          {{
+            profile_image
+            | image_url: width: 200
+            | image_tag: alt: producer.nome.value, loading: 'eager', widths: '100, 150, 200', class: 'ul-producer-profile__avatar-image'
+          }}
+        {%- else -%}
+          <span class="ul-producer-profile__avatar-fallback">
+            {% render 'ul-icon', name: 'sprout', size: 32 %}
+          </span>
+        {%- endif -%}
+      </span>
+
+      <div class="ul-producer-profile__identity">
+        <h1 class="ul-producer-profile__name">{{ producer.nome.value | default: 'Nome do produtor' }}</h1>
+        {%- if producer.nome_horta.value != blank -%}
+          <p class="ul-producer-profile__horta">{{ producer.nome_horta.value }}</p>
+        {%- endif -%}
+        <p class="ul-producer-profile__meta">
+          {% render 'ul-icon', name: 'map-pin', size: 16 %}
+          {{ producer.bairro.value | default: 'Bairro a definir' }}{% if producer.regiao.value != blank %} · {{ producer.regiao.value }}{% endif %}
+          {%- if producer.anos_experiencia.value != blank -%}
+            <span class="ul-producer-profile__experience">
+              · {{ producer.anos_experiencia.value }} {% if producer.anos_experiencia.value == 1 %}ano{% else %}anos{% endif %} de experiência
+            </span>
+          {%- endif -%}
+        </p>
+      </div>
+    </div>
+
+    {%- if producer.descricao_curta.value != blank -%}
+      <p class="ul-producer-profile__intro">{{ producer.descricao_curta.value }}</p>
+    {%- endif -%}
+
+    {%- if producer.historia.value != blank -%}
+      <div class="ul-producer-profile__section">
+        <h2 class="ul-producer-profile__section-title">História</h2>
+        <p class="ul-producer-profile__section-text">{{ producer.historia.value }}</p>
+      </div>
+    {%- endif -%}
+
+    {%- if producer.principais_cultivos.value.size > 0 -%}
+      <div class="ul-producer-profile__section">
+        <h2 class="ul-producer-profile__section-title">Principais cultivos</h2>
+        <ul class="ul-producer-profile__tags">
+          {%- for cultivo in producer.principais_cultivos.value -%}
+            <li>{{ cultivo }}</li>
+          {%- endfor -%}
+        </ul>
+      </div>
+    {%- endif -%}
+
+    {%- if producer.praticas_sustentaveis.value.size > 0 -%}
+      <div class="ul-producer-profile__section">
+        <h2 class="ul-producer-profile__section-title">Práticas sustentáveis</h2>
+        <div class="ul-producer-profile__pills">
+          {%- for pratica in producer.praticas_sustentaveis.value -%}
+            <span class="ul-badge">{{ pratica }}</span>
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endif -%}
+
+    <div class="ul-producer-profile__products-placeholder">
+      <p>Os produtos e cestas deste produtor serão exibidos aqui na próxima etapa (Etapa 3 — relação com produtos via metafield <code>custom.produtor</code>).</p>
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .ul-producer-profile {
+    background: var(--ul-color-background);
+  }
+
+  .ul-producer-profile__cover {
+    display: block;
+    width: 100%;
+    height: 280px;
+    overflow: hidden;
+    background: rgb(var(--ul-color-primary-rgb) / 0.1);
+  }
+
+  @media (min-width: 768px) {
+    .ul-producer-profile__cover {
+      height: 360px;
+    }
+  }
+
+  .ul-producer-profile__cover-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ul-producer-profile__cover-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--ul-color-olive-light);
+  }
+
+  .ul-producer-profile__content {
+    padding-block: 2rem 4rem;
+  }
+
+  .ul-producer-profile__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    color: var(--ul-color-primary);
+    font-family: var(--ul-font-family);
+    font-size: 0.875rem;
+    font-weight: var(--ul-font-weight-medium);
+    text-decoration: none;
+  }
+
+  .ul-producer-profile__back-icon {
+    display: inline-flex;
+    transform: rotate(180deg);
+  }
+
+  .ul-producer-profile__back:hover,
+  .ul-producer-profile__back:focus-visible {
+    text-decoration: underline;
+  }
+
+  .ul-producer-profile__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: -4.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .ul-producer-profile__avatar {
+    display: block;
+    flex-shrink: 0;
+    width: 96px;
+    height: 96px;
+    border: 4px solid var(--ul-color-background);
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgb(var(--ul-color-primary-rgb) / 0.1);
+    box-shadow: var(--ul-shadow-card-sm);
+  }
+
+  .ul-producer-profile__avatar-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ul-producer-profile__avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--ul-color-olive-light);
+  }
+
+  .ul-producer-profile__name {
+    margin: 0;
+    font-family: var(--ul-font-family);
+    font-size: 1.75rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-producer-profile__horta {
+    margin: 4px 0 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.9375rem;
+  }
+
+  .ul-producer-profile__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 8px 0 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.8125rem;
+  }
+
+  .ul-producer-profile__intro {
+    max-width: 42rem;
+    margin: 0 0 2rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-producer-profile__section {
+    max-width: 42rem;
+    margin-bottom: 2rem;
+  }
+
+  .ul-producer-profile__section-title {
+    margin: 0 0 0.5rem;
+    font-family: var(--ul-font-family);
+    font-size: 1.125rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-producer-profile__section-text {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-producer-profile__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ul-producer-profile__tags li {
+    padding: 6px 14px;
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-secondary);
+    color: var(--ul-color-secondary-foreground);
+    font-size: 0.8125rem;
+  }
+
+  .ul-producer-profile__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ul-producer-profile__products-placeholder {
+    max-width: 42rem;
+    padding: 1.5rem;
+    border: 1px dashed var(--ul-color-border);
+    border-radius: var(--ul-radius-base);
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.875rem;
+  }
+
+  .ul-producer-profile__products-placeholder p {
+    margin: 0;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Perfil do Produtor",
+  "tag": "section",
+  "class": "ul-producer-profile-section"
+}
+{% endschema %}

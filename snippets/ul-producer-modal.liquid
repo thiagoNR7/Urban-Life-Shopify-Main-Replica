@@ -1,0 +1,277 @@
+{%- doc -%}
+  Modal acessivel de apresentacao do produtor (Etapa 2 - Urban Life).
+  Reaproveita o web component nativo `dialog-component` (assets/dialog.js,
+  ja carregado globalmente via snippets/scripts.liquid) para foco preso,
+  fechamento por Esc/clique fora/X e bloqueio de scroll - nada disso e
+  reimplementado aqui.
+
+  @param {object} producer - Entrada do metaobject `produtor`.
+  @param {string} modal_id - Id unico do dialog-component (usado pelo card para abrir via on:click="#id/showDialog").
+  @param {object} [cover_image] - Imagem de capa ja resolvida (producer.foto_capa.reference.image), evita recalcular.
+
+  @example
+  {% render 'ul-producer-modal', producer: producer, modal_id: modal_id, cover_image: cover_image %}
+{%- enddoc -%}
+
+<dialog-component id="{{ modal_id }}" class="ul-producer-modal-root">
+  <dialog
+    ref="dialog"
+    class="ul-producer-modal"
+    scroll-lock
+    aria-labelledby="{{ modal_id }}-title"
+  >
+    <button
+      type="button"
+      class="ul-producer-modal__close"
+      on:click="/closeDialog"
+      aria-label="Fechar"
+    >
+      {% render 'ul-icon', name: 'close', size: 20 %}
+    </button>
+
+    <div class="ul-producer-modal__cover">
+      {%- if cover_image != blank -%}
+        {{
+          cover_image
+          | image_url: width: 800
+          | image_tag:
+            alt: producer.nome.value,
+            loading: 'lazy',
+            sizes: '(min-width: 640px) 520px, 100vw',
+            widths: '400, 600, 800',
+            class: 'ul-producer-modal__cover-image'
+        }}
+      {%- else -%}
+        <span class="ul-producer-modal__cover-fallback">
+          {% render 'ul-icon', name: 'sprout', size: 56 %}
+        </span>
+      {%- endif -%}
+
+      <span class="ul-producer-modal__cover-gradient" aria-hidden="true"></span>
+
+      <span class="ul-producer-modal__cover-text">
+        <span id="{{ modal_id }}-title" class="ul-producer-modal__name">{{ producer.nome.value | default: 'Nome do produtor' }}</span>
+        <span class="ul-producer-modal__location">
+          {% render 'ul-icon', name: 'map-pin', size: 14 %}
+          {{ producer.bairro.value | default: 'Bairro a definir' }}{% if producer.regiao.value != blank %} · {{ producer.regiao.value }}{% endif %}
+        </span>
+      </span>
+    </div>
+
+    <div class="ul-producer-modal__body">
+      {%- if producer.praticas_sustentaveis.value.size > 0 -%}
+        <div class="ul-producer-modal__pills">
+          {%- for pratica in producer.praticas_sustentaveis.value -%}
+            <span class="ul-badge">{{ pratica }}</span>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+
+      {%- if producer.historia.value != blank -%}
+        <div class="ul-producer-modal__section">
+          <h3 class="ul-producer-modal__section-title">História</h3>
+          <p class="ul-producer-modal__section-text">{{ producer.historia.value }}</p>
+        </div>
+      {%- endif -%}
+
+      {%- if producer.principais_cultivos.value.size > 0 -%}
+        <div class="ul-producer-modal__section">
+          <h3 class="ul-producer-modal__section-title">O que cultiva</h3>
+          <ul class="ul-producer-modal__cultivos">
+            {%- for cultivo in producer.principais_cultivos.value -%}
+              <li>{{ cultivo }}</li>
+            {%- endfor -%}
+          </ul>
+        </div>
+      {%- endif -%}
+
+      <a href="{{ producer.system.url | default: '#' }}" class="ul-btn ul-btn--solid ul-btn--lg ul-producer-modal__cta">
+        Ver Produtos
+      </a>
+      {%- if producer.system.url == blank -%}
+        <p class="ul-producer-modal__cta-note">
+          A página individual deste produtor ainda não foi publicada (Etapa 3 / Storefront pages do metaobject).
+        </p>
+      {%- endif -%}
+    </div>
+  </dialog>
+</dialog-component>
+
+{% stylesheet %}
+  .ul-producer-modal::backdrop {
+    background: var(--ul-color-modal-overlay);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .ul-producer-modal {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(520px, calc(100vw - 2rem));
+    max-height: min(720px, calc(100vh - 3rem));
+    padding: 0;
+    border: none;
+    border-radius: var(--ul-radius-lg);
+    overflow-y: auto;
+    background: var(--ul-color-background);
+    box-shadow: var(--ul-shadow-carousel);
+    font-family: var(--ul-font-family);
+  }
+
+  .ul-producer-modal[open] {
+    animation: ul-fade-in 0.25s ease;
+  }
+
+  .ul-producer-modal.dialog-closing {
+    animation: ul-fade-in 0.2s ease reverse;
+  }
+
+  @media (max-width: 640px) {
+    .ul-producer-modal {
+      inset: auto 0 0 0;
+      width: 100%;
+      max-width: none;
+      max-height: 85vh;
+      border-radius: var(--ul-radius-lg) var(--ul-radius-lg) 0 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ul-producer-modal[open],
+    .ul-producer-modal.dialog-closing {
+      animation: none;
+    }
+  }
+
+  .ul-producer-modal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--ul-radius-pill);
+    background: rgb(33 31 28 / 0.35);
+    color: var(--ul-color-white);
+    cursor: pointer;
+  }
+
+  .ul-producer-modal__close:hover,
+  .ul-producer-modal__close:focus-visible {
+    background: rgb(33 31 28 / 0.55);
+  }
+
+  .ul-producer-modal__cover {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+    background: rgb(var(--ul-color-primary-rgb) / 0.1);
+  }
+
+  .ul-producer-modal__cover-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ul-producer-modal__cover-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--ul-color-olive-light);
+  }
+
+  .ul-producer-modal__cover-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0) 60%);
+  }
+
+  .ul-producer-modal__cover-text {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--ul-color-white);
+  }
+
+  .ul-producer-modal__name {
+    font-size: 1.25rem;
+    font-weight: var(--ul-font-weight-bold);
+  }
+
+  .ul-producer-modal__location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8125rem;
+    opacity: 0.9;
+  }
+
+  .ul-producer-modal__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+  }
+
+  .ul-producer-modal__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ul-producer-modal__section-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    font-weight: var(--ul-font-weight-semibold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-producer-modal__section-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-producer-modal__cultivos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ul-producer-modal__cultivos li {
+    padding: 4px 12px;
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-secondary);
+    color: var(--ul-color-secondary-foreground);
+    font-size: 0.75rem;
+  }
+
+  .ul-producer-modal__cta {
+    width: 100%;
+  }
+
+  .ul-producer-modal__cta-note {
+    margin: -0.75rem 0 0;
+    font-size: 0.75rem;
+    color: var(--ul-color-muted-foreground);
+    text-align: center;
+  }
+{% endstylesheet %}

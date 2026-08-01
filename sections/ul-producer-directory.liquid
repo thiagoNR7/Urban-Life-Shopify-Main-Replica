@@ -1,0 +1,237 @@
+{{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
+{{ 'ul-base.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign producers = metaobjects.produtor.values
+
+  assign bairro_values = ''
+  for producer in producers
+    if producer.bairro.value != blank
+      assign bairro_values = bairro_values | append: producer.bairro.value | append: '::'
+    endif
+  endfor
+  assign bairro_options = bairro_values | split: '::' | uniq | sort
+
+  assign cultivo_values = ''
+  for producer in producers
+    for cultivo in producer.principais_cultivos.value
+      assign cultivo_values = cultivo_values | append: cultivo | append: '::'
+    endfor
+  endfor
+  assign cultivo_options = cultivo_values | split: '::' | uniq | sort
+-%}
+
+<script
+  src="{{ 'ul-producers.js' | asset_url }}"
+  type="module"
+></script>
+
+<section id="produtores" class="ul-producer-directory-section">
+  <ul-producer-directory-component class="ul-producer-directory" id="UlProducerDirectory-{{ section.id }}">
+    <div class="ul-container">
+      <div class="ul-producer-directory__toolbar" role="search" aria-label="Buscar produtores">
+        <div class="ul-producer-directory__search">
+          {% render 'ul-icon', name: 'search', size: 18, class: 'ul-producer-directory__search-icon' %}
+          <label class="visually-hidden" for="ProducerSearch-{{ section.id }}">Buscar por nome, horta ou bairro</label>
+          <input
+            ref="searchInput"
+            type="search"
+            id="ProducerSearch-{{ section.id }}"
+            class="ul-producer-directory__search-input"
+            placeholder="Buscar por nome, horta ou bairro"
+            autocomplete="off"
+            on:input="/filter"
+          >
+        </div>
+
+        <div class="ul-producer-directory__filters">
+          <div class="ul-producer-directory__field">
+            <label class="ul-producer-directory__field-label" for="ProducerBairro-{{ section.id }}">Bairro</label>
+            <select ref="bairroSelect" id="ProducerBairro-{{ section.id }}" on:change="/filter">
+              <option value="">Todos os bairros</option>
+              {%- for bairro in bairro_options -%}
+                <option value="{{ bairro | escape }}">{{ bairro }}</option>
+              {%- endfor -%}
+            </select>
+          </div>
+
+          <div class="ul-producer-directory__field">
+            <label class="ul-producer-directory__field-label" for="ProducerCultivo-{{ section.id }}">Tipo de cultivo</label>
+            <select ref="cultivoSelect" id="ProducerCultivo-{{ section.id }}" on:change="/filter">
+              <option value="">Todos os cultivos</option>
+              {%- for cultivo in cultivo_options -%}
+                <option value="{{ cultivo | escape }}">{{ cultivo }}</option>
+              {%- endfor -%}
+            </select>
+          </div>
+
+          <label class="ul-producer-directory__checkbox">
+            <input ref="agroCheckbox" type="checkbox" on:change="/filter">
+            Agroecológico
+          </label>
+
+          <button type="button" class="ul-btn ul-btn--outline ul-btn--sm" ref="clearButton" on:click="/clearFilters">
+            Limpar filtros
+          </button>
+        </div>
+      </div>
+
+      <p class="ul-producer-directory__counter" ref="counter" aria-live="polite">
+        {{ producers.size }} {% if producers.size == 1 %}produtor encontrado{% else %}produtores encontrados{% endif %}
+      </p>
+
+      {%- if producers.size > 0 -%}
+        <div class="ul-producer-directory__grid" ref="grid">
+          {%- for producer in producers -%}
+            {% render 'ul-producer-card', producer: producer %}
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+
+      <p class="ul-producer-directory__empty" ref="emptyState" {% if producers.size > 0 %}hidden{% endif %}>
+        {%- if producers.size > 0 -%}
+          Nenhum produtor encontrado com esses filtros.
+        {%- else -%}
+          Nenhum produtor cadastrado ainda. Cadastre entradas no metaobject "produtor" pelo Shopify Admin.
+        {%- endif -%}
+      </p>
+    </div>
+  </ul-producer-directory-component>
+</section>
+
+{% stylesheet %}
+  .ul-producer-directory-section {
+    background: var(--ul-color-page-gray);
+    padding-block: 3rem 5rem;
+  }
+
+  .ul-producer-directory__toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    background: var(--ul-color-white);
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-lg);
+  }
+
+  .ul-producer-directory__search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .ul-producer-directory__search-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--ul-color-muted-foreground);
+    pointer-events: none;
+  }
+
+  .ul-producer-directory__search-input {
+    width: 100%;
+    height: 44px;
+    padding-inline: 44px 16px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-background);
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.875rem;
+  }
+
+  .ul-producer-directory__search-input:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+  }
+
+  .ul-producer-directory__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 1rem;
+  }
+
+  .ul-producer-directory__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ul-producer-directory__field-label {
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-medium);
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-producer-directory__field select {
+    height: 40px;
+    padding-inline: 12px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-base);
+    background: var(--ul-color-background);
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.875rem;
+  }
+
+  .ul-producer-directory__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    font-size: 0.875rem;
+    color: var(--ul-color-foreground);
+    cursor: pointer;
+  }
+
+  .ul-producer-directory__checkbox input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ul-color-primary);
+  }
+
+  .ul-producer-directory__counter {
+    margin: 0 0 1.25rem;
+    font-size: 0.875rem;
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-producer-directory__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ul-space-grid-gap-sm);
+  }
+
+  @media (min-width: 640px) {
+    .ul-producer-directory__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ul-producer-directory__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .ul-producer-directory__empty {
+    padding: 2.5rem 1rem;
+    color: var(--ul-color-muted-foreground);
+    text-align: center;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Diretório de Produtores",
+  "tag": "section",
+  "class": "ul-producer-directory-wrapper",
+  "presets": [
+    {
+      "name": "Diretório de Produtores"
+    }
+  ]
+}
+{% endschema %}

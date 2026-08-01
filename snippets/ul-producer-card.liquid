@@ -1,0 +1,207 @@
+{%- doc -%}
+  Card reutilizavel de produtor + modal de apresentacao (Etapa 2 - Urban
+  Life). Le os campos do metaobject `produtor` (ver documentacao entregue
+  junto com a Etapa 2 para os field keys esperados no Admin).
+
+  @param {object} producer - Entrada do metaobject `produtor` (metaobjects.produtor.values).
+
+  @example
+  {% render 'ul-producer-card', producer: producer %}
+{%- enddoc -%}
+
+{%- liquid
+  assign cover_image = producer.foto_capa.reference.image
+
+  assign cultivos_flat = ''
+  for cultivo in producer.principais_cultivos.value
+    assign cultivos_flat = cultivos_flat | append: cultivo | append: '|'
+  endfor
+
+  assign modal_id = 'ProducerModal-' | append: producer.handle
+-%}
+
+<button
+  type="button"
+  class="ul-producer-card"
+  ref="cards[]"
+  data-name="{{ producer.nome.value | escape }}"
+  data-horta="{{ producer.nome_horta.value | escape }}"
+  data-bairro="{{ producer.bairro.value | escape }}"
+  data-cultivos="{{ cultivos_flat | escape }}"
+  data-agroecologico="{{ producer.agroecologico.value | default: false }}"
+  on:click="#{{ modal_id }}/showDialog"
+  aria-haspopup="dialog"
+>
+  <span class="ul-producer-card__cover">
+    {%- if cover_image != blank -%}
+      {{
+        cover_image
+        | image_url: width: 480
+        | image_tag:
+          alt: producer.nome.value,
+          loading: 'lazy',
+          sizes: '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw',
+          widths: '320, 400, 480',
+          class: 'ul-producer-card__cover-image'
+      }}
+    {%- else -%}
+      <span class="ul-producer-card__cover-fallback">
+        {% render 'ul-icon', name: 'sprout', size: 48 %}
+      </span>
+    {%- endif -%}
+
+    {%- if producer.selo_origem.value != blank -%}
+      <span class="ul-producer-card__seal">{{ producer.selo_origem.value }}</span>
+    {%- endif -%}
+  </span>
+
+  <span class="ul-producer-card__body">
+    <span class="ul-producer-card__name">{{ producer.nome.value | default: 'Nome do produtor' }}</span>
+    {%- if producer.nome_horta.value != blank -%}
+      <span class="ul-producer-card__horta">{{ producer.nome_horta.value }}</span>
+    {%- endif -%}
+
+    <span class="ul-producer-card__location">
+      {% render 'ul-icon', name: 'map-pin', size: 14 %}
+      {{ producer.bairro.value | default: 'Bairro a definir' }}
+    </span>
+
+    {%- if producer.descricao_curta.value != blank -%}
+      <span class="ul-producer-card__desc">{{ producer.descricao_curta.value }}</span>
+    {%- endif -%}
+
+    <span class="ul-producer-card__cta">
+      Ver catálogo
+      {% render 'ul-icon', name: 'arrow-right', class: 'ul-producer-card__cta-arrow', size: 16 %}
+    </span>
+  </span>
+</button>
+
+{% render 'ul-producer-modal', producer: producer, modal_id: modal_id, cover_image: cover_image %}
+
+{% stylesheet %}
+  .ul-producer-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background: var(--ul-color-background);
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-card);
+    box-shadow: var(--ul-shadow-card-sm);
+    overflow: hidden;
+    text-align: left;
+    cursor: pointer;
+    padding: 0;
+    font-family: var(--ul-font-family);
+    transition: box-shadow var(--ul-transition-fast), transform var(--ul-transition-fast);
+  }
+
+  .ul-producer-card:hover,
+  .ul-producer-card:focus-visible {
+    box-shadow: var(--ul-shadow-card-md-hover);
+    transform: translateY(-4px);
+  }
+
+  .ul-producer-card__cover {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 192px;
+    overflow: hidden;
+    background: rgb(var(--ul-color-primary-rgb) / 0.08);
+  }
+
+  .ul-producer-card__cover-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--ul-transition-slide);
+  }
+
+  .ul-producer-card:hover .ul-producer-card__cover-image,
+  .ul-producer-card:focus-visible .ul-producer-card__cover-image {
+    transform: scale(1.05);
+  }
+
+  .ul-producer-card__cover-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--ul-color-olive-light);
+    background: rgb(var(--ul-color-primary-rgb) / 0.1);
+  }
+
+  .ul-producer-card__seal {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 12px;
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-white);
+    color: var(--ul-color-primary);
+    font-size: 0.6875rem;
+    font-weight: var(--ul-font-weight-semibold);
+    letter-spacing: 0.03em;
+    box-shadow: var(--ul-shadow-card-sm);
+  }
+
+  .ul-producer-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+
+  .ul-producer-card__name {
+    font-size: 1.0625rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-producer-card__horta {
+    font-size: 0.8125rem;
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-producer-card__location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-producer-card__desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin-top: 8px;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-producer-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    color: var(--ul-color-primary);
+    font-size: 0.8125rem;
+    font-weight: var(--ul-font-weight-semibold);
+  }
+
+  .ul-producer-card__cta-arrow {
+    transition: transform var(--ul-transition-fast);
+  }
+
+  .ul-producer-card:hover .ul-producer-card__cta-arrow,
+  .ul-producer-card:focus-visible .ul-producer-card__cta-arrow {
+    transform: translateX(3px);
+  }
+{% endstylesheet %}

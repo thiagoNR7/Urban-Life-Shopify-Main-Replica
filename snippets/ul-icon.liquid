@@ -2,7 +2,7 @@
   Renders a small line-style icon used across the ul-* Urban Life
   sections (stats bar, badges, how-it-works, delivery regions).
 
-  @param {string} name - One of: leaf, sprout, truck, home, users, map-pin, clock, arrow-right.
+  @param {string} name - One of: leaf, sprout, truck, home, users, map-pin, clock, arrow-right, search, close.
   @param {string} [class] - Additional classes appended to the svg element.
   @param {number} [size] - Width/height in px. Default 24.
 
@@ -57,5 +57,11 @@
     {%- when 'arrow-right' -%}
       <path d="M5 12h14"></path>
       <path d="m13 5 7 7-7 7"></path>
+    {%- when 'search' -%}
+      <circle cx="11" cy="11" r="7"></circle>
+      <path d="m21 21-4.3-4.3"></path>
+    {%- when 'close' -%}
+      <path d="M18 6 6 18"></path>
+      <path d="m6 6 12 12"></path>
   {%- endcase -%}
 </svg>

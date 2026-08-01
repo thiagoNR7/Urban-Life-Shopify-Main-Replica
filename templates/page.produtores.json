@@ -1,0 +1,16 @@
+{
+  "sections": {
+    "producers_hero": {
+      "type": "ul-producers-hero",
+      "settings": {}
+    },
+    "producers_directory": {
+      "type": "ul-producer-directory",
+      "settings": {}
+    }
+  },
+  "order": [
+    "producers_hero",
+    "producers_directory"
+  ]
+}
