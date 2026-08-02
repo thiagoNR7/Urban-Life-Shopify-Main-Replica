@@ -45,7 +45,7 @@
         <h4 class="ul-footer__col-heading">Navegação</h4>
         <nav class="ul-footer__nav">
           <a href="{{ section.settings.link_baskets | default: routes.all_products_collection_url }}" class="ul-footer__link">Cestas da semana</a>
-          <a href="{{ section.settings.link_producers | default: '#produtores' }}" class="ul-footer__link">Produtores parceiros</a>
+          <a href="{{ section.settings.link_producers | default: '/pages/produtores?view=produtores' }}" class="ul-footer__link">Produtores parceiros</a>
           <a href="{{ section.settings.link_about | default: '#' }}" class="ul-footer__link">Sobre a Urban Life</a>
           <a href="{{ section.settings.link_terms | default: '#' }}" class="ul-footer__link">Termos de Uso</a>
           <a href="{{ section.settings.link_privacy | default: '#' }}" class="ul-footer__link">Privacidade</a>
@@ -255,7 +255,7 @@
       "type": "textarea",
       "id": "brand_copy",
       "label": "Texto institucional",
-      "default": "Infraestrutura premium de alimentação consciente — conectando hortas urbanas de São Paulo a quem valoriza qualidade e rastreabilidade."
+      "default": "Infraestrutura premium de alimentação consciente, conectando hortas urbanas de São Paulo a quem valoriza qualidade e rastreabilidade."
     },
     {
       "type": "header",
@@ -304,7 +304,7 @@
       "type": "text",
       "id": "copyright",
       "label": "Copyright",
-      "default": "© 2026 Urban Life — Alimentação com propósito em São Paulo."
+      "default": "© 2026 Urban Life. Alimentação com propósito em São Paulo."
     },
     {
       "type": "text",

@@ -38,7 +38,7 @@
       "type": "ul-how-it-works",
       "blocks": {
         "step_1": { "type": "step", "settings": { "icon": "sprout", "title": "Escolha sua cesta", "description": "Selecione o tamanho ideal para o seu consumo semanal. Seleção curada de alimentos frescos de hortas urbanas." } },
-        "step_2": { "type": "step", "settings": { "icon": "truck", "title": "Agendamos sua entrega", "description": "Entrega programada por região. Sem surpresas — você sabe exatamente quando vai chegar." } },
+        "step_2": { "type": "step", "settings": { "icon": "truck", "title": "Agendamos sua entrega", "description": "Entrega programada por região. Sem surpresas: você sabe exatamente quando vai chegar." } },
         "step_3": { "type": "step", "settings": { "icon": "home", "title": "Receba em casa", "description": "Embalagem kraft premium, organizada e minimalista. Fresco, rastreável e pronto para a semana." } }
       },
       "block_order": ["step_1", "step_2", "step_3"],

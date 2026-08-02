@@ -2,7 +2,7 @@
 {{ 'ul-base.css' | asset_url | stylesheet_tag }}
 
 {%- liquid
-  assign producers = metaobjects.produtor.values
+  assign producers = metaobjects['produtor_luis'].values
 
   assign bairro_values = ''
   for producer in producers
@@ -92,7 +92,7 @@
         {%- if producers.size > 0 -%}
           Nenhum produtor encontrado com esses filtros.
         {%- else -%}
-          Nenhum produtor cadastrado ainda. Cadastre entradas no metaobject "produtor" pelo Shopify Admin.
+          Nenhum produtor cadastrado ainda.
         {%- endif -%}
       </p>
     </div>

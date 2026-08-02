@@ -14,18 +14,27 @@
 
 {%- liquid
   assign producer = metaobject
-  assign cover_image = producer.foto_capa.reference.image
-  assign profile_image = producer.foto_perfil.reference.image
+  assign cover_image = producer.foto_capa.value
+  assign profile_image = producer.foto_perfil.value
+  assign cultivos_image = producer.foto_cultivos.value
+
+  assign producer_name = producer.nome.value | default: 'Produtor'
+  assign cover_image_alt = producer_name | append: ' colhendo na horta'
+  assign cultivation_image_alt = producer_name | append: ' - cultivos da horta'
 -%}
 
 <section class="ul-producer-profile">
   <div class="ul-producer-profile__cover">
+    <a href="{{ pages.produtores.url | default: '/pages/produtores' | append: '?view=produtores' }}" class="ul-producer-profile__back">
+      <span class="ul-producer-profile__back-icon">{% render 'ul-icon', name: 'arrow-right', size: 16 %}</span>
+      Voltar para Produtores
+    </a>
     {%- if cover_image != blank -%}
       {{
         cover_image
         | image_url: width: 1600
         | image_tag:
-          alt: producer.nome.value,
+          alt: cover_image_alt,
           loading: 'eager',
           sizes: '100vw',
           widths: '800, 1200, 1600',
@@ -39,11 +48,6 @@
   </div>
 
   <div class="ul-container ul-producer-profile__content">
-    <a href="{{ pages.produtores.url | default: '/pages/produtores' }}" class="ul-producer-profile__back">
-      <span class="ul-producer-profile__back-icon">{% render 'ul-icon', name: 'arrow-right', size: 16 %}</span>
-      Voltar para Produtores
-    </a>
-
     <div class="ul-producer-profile__header">
       <span class="ul-producer-profile__avatar">
         {%- if profile_image != blank -%}
@@ -98,6 +102,24 @@
       </div>
     {%- endif -%}
 
+    {%- if cultivos_image != blank -%}
+      <div class="ul-producer-profile__section">
+        <h2 class="ul-producer-profile__section-title">Foto dos cultivos</h2>
+        <div class="ul-producer-profile__cultivos-image">
+          {{
+            cultivos_image
+            | image_url: width: 800
+            | image_tag:
+              alt: cultivation_image_alt,
+              loading: 'lazy',
+              sizes: '(min-width: 768px) 480px, 100vw',
+              widths: '400, 600, 800',
+              class: 'ul-producer-profile__cultivos-img'
+          }}
+        </div>
+      </div>
+    {%- endif -%}
+
     {%- if producer.praticas_sustentaveis.value.size > 0 -%}
       <div class="ul-producer-profile__section">
         <h2 class="ul-producer-profile__section-title">Práticas sustentáveis</h2>
@@ -110,7 +132,7 @@
     {%- endif -%}
 
     <div class="ul-producer-profile__products-placeholder">
-      <p>Os produtos e cestas deste produtor serão exibidos aqui na próxima etapa (Etapa 3 — relação com produtos via metafield <code>custom.produtor</code>).</p>
+      <p>Os produtos e cestas deste produtor serão exibidos aqui na próxima etapa (Etapa 3, relação com produtos via metafield <code>custom.produtor</code>).</p>
     </div>
   </div>
 </section>
@@ -121,6 +143,7 @@
   }
 
   .ul-producer-profile__cover {
+    position: relative;
     display: block;
     width: 100%;
     height: 280px;
@@ -139,6 +162,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center 42%;
   }
 
   .ul-producer-profile__cover-fallback {
@@ -155,10 +179,17 @@
   }
 
   .ul-producer-profile__back {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 1.5rem;
+    padding: 8px 14px;
+    border-radius: var(--ul-radius-pill);
+    background: rgb(255 255 255 / 0.9);
+    box-shadow: var(--ul-shadow-card-sm);
     color: var(--ul-color-primary);
     font-family: var(--ul-font-family);
     font-size: 0.875rem;
@@ -286,6 +317,22 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .ul-producer-profile__cultivos-image {
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--ul-radius-base);
+    background: rgb(var(--ul-color-primary-rgb) / 0.08);
+  }
+
+  .ul-producer-profile__cultivos-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .ul-producer-profile__products-placeholder {

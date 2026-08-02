@@ -7,7 +7,7 @@
 
   @param {object} producer - Entrada do metaobject `produtor`.
   @param {string} modal_id - Id unico do dialog-component (usado pelo card para abrir via on:click="#id/showDialog").
-  @param {object} [cover_image] - Imagem de capa ja resolvida (producer.foto_capa.reference.image), evita recalcular.
+  @param {object} [cover_image] - Imagem de capa ja resolvida (producer.foto_card.value), evita recalcular.
 
   @example
   {% render 'ul-producer-modal', producer: producer, modal_id: modal_id, cover_image: cover_image %}
@@ -31,11 +31,15 @@
 
     <div class="ul-producer-modal__cover">
       {%- if cover_image != blank -%}
+        {%- liquid
+          assign producer_name = producer.nome.value | default: 'Produtor'
+          assign modal_image_alt = producer_name | append: ' - produtor parceiro Urban Life'
+        -%}
         {{
           cover_image
           | image_url: width: 800
           | image_tag:
-            alt: producer.nome.value,
+            alt: modal_image_alt,
             loading: 'lazy',
             sizes: '(min-width: 640px) 520px, 100vw',
             widths: '400, 600, 800',
@@ -179,6 +183,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center 60%;
   }
 
   .ul-producer-modal__cover-fallback {

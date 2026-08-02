@@ -66,7 +66,7 @@
         <a href="{{ section.settings.menu_link_2_url | default: routes.all_products_collection_url }}" class="ul-header__menu-link">{{ section.settings.menu_link_2_label }}</a>
       </li>
       <li class="ul-header__menu-item">
-        <a href="{{ section.settings.menu_link_3_url | default: '#produtores' }}" class="ul-header__menu-link">{{ section.settings.menu_link_3_label }}</a>
+        <a href="{{ section.settings.menu_link_3_url | default: '/pages/produtores?view=produtores' }}" class="ul-header__menu-link">{{ section.settings.menu_link_3_label }}</a>
       </li>
       <li class="ul-header__menu-item">
         <a href="{{ section.settings.menu_link_4_url | default: '#como-funciona' }}" class="ul-header__menu-link">{{ section.settings.menu_link_4_label }}</a>
@@ -103,7 +103,7 @@
         class="ul-btn ul-btn--solid ul-btn--sm ul-header__producer-cta"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Sou Produtor — falar no WhatsApp (abre em nova aba)"
+        aria-label="Sou Produtor: falar no WhatsApp (abre em nova aba)"
       >
         {% render 'ul-icon', name: 'sprout', size: 16 %}
         Sou Produtor
@@ -137,14 +137,14 @@
   >
     <a href="{{ section.settings.menu_link_1_url | default: routes.root_url }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_1_label }}</a>
     <a href="{{ section.settings.menu_link_2_url | default: routes.all_products_collection_url }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_2_label }}</a>
-    <a href="{{ section.settings.menu_link_3_url | default: '#produtores' }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_3_label }}</a>
+    <a href="{{ section.settings.menu_link_3_url | default: '/pages/produtores?view=produtores' }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_3_label }}</a>
     <a href="{{ section.settings.menu_link_4_url | default: '#como-funciona' }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_4_label }}</a>
     <a
       href="{{ ul_wa_href }}"
       class="ul-header__mobile-menu-link ul-header__mobile-menu-link--cta"
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Sou Produtor — falar no WhatsApp (abre em nova aba)"
+      aria-label="Sou Produtor: falar no WhatsApp (abre em nova aba)"
     >
       {% render 'ul-icon', name: 'sprout', size: 16 %}
       Sou Produtor
@@ -426,7 +426,7 @@
       "type": "url",
       "id": "menu_link_3_url",
       "label": "Link 3 - URL",
-      "info": "Enquanto a pagina /pages/produtores nao existir, aponta para a ancora #produtores. Atualize aqui quando a pagina for publicada."
+      "info": "Fallback temporario: aponta para /pages/produtores?view=produtores enquanto a pagina padrao nao renderiza o template correto. Atualize aqui quando a pagina for corrigida."
     },
     {
       "type": "text",
