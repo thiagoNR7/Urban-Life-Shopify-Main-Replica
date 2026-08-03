@@ -1,12 +1,19 @@
 {%- comment -%}
   Perfil individual do produtor (Etapa 2 - Urban Life).
-  Renderizado via templates/metaobject/produtor.json - o objeto atual da
-  Storefront Page do metaobject `produtor` fica disponivel globalmente
-  como `metaobject` (ver documentacao da Etapa 2).
+  Renderizado via templates/metaobject/produtor_luis.json - o objeto atual da
+  Storefront Page do metaobject fica disponivel globalmente como `metaobject`
+  (ver documentacao da Etapa 2).
 
-  A relacao com produtos/cestas (metafield custom.produtor, "produtos
-  relacionados", escolha da cesta) e conteudo da Etapa 3 - propositalmente
-  fora de escopo aqui.
+  Produtos relacionados (Etapa 3.4): collections.all.products filtrado pelo
+  metafield de produto custom.produtor (referencia de metaobjeto), comparando
+  product.metafields.custom.produtor.value.system.id com producer.system.id.
+  Nao depende do handle/tipo especifico do produtor - funciona para qualquer
+  entrada da definicao "Produtor".
+
+  O filtro usa um loop manual (nao o filtro `where`) porque `where` nao
+  consegue acessar o caminho profundo metafields.custom.produtor.value.system.id
+  de forma confiavel - a comparacao precisa ser feita explicitamente dentro
+  do loop.
 {%- endcomment -%}
 
 {{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
@@ -21,7 +28,22 @@
   assign producer_name = producer.nome.value | default: 'Produtor'
   assign cover_image_alt = producer_name | append: ' colhendo na horta'
   assign cultivation_image_alt = producer_name | append: ' - cultivos da horta'
+
+  assign matched_products_count = 0
 -%}
+
+{%- capture producer_product_cards -%}
+  {%- for product in collections.all.products -%}
+    {%- assign referenced_producer = product.metafields.custom.produtor.value -%}
+
+    {%- if referenced_producer != blank
+      and referenced_producer.system.id == producer.system.id
+    -%}
+      {%- assign matched_products_count = matched_products_count | plus: 1 -%}
+      {% render 'ul-producer-product-card', product: product %}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endcapture -%}
 
 <section class="ul-producer-profile">
   <div class="ul-producer-profile__cover">
@@ -131,8 +153,15 @@
       </div>
     {%- endif -%}
 
-    <div class="ul-producer-profile__products-placeholder">
-      <p>Os produtos e cestas deste produtor serão exibidos aqui na próxima etapa (Etapa 3, relação com produtos via metafield <code>custom.produtor</code>).</p>
+    <div class="ul-producer-profile__products">
+      <h2 class="ul-producer-profile__section-title">Produtos deste produtor</h2>
+      {%- if matched_products_count > 0 -%}
+        <div class="ul-producer-profile__products-grid">
+          {{ producer_product_cards }}
+        </div>
+      {%- else -%}
+        <p class="ul-producer-profile__products-empty">Nenhum produto disponível deste produtor no momento.</p>
+      {%- endif -%}
     </div>
   </div>
 </section>
@@ -335,17 +364,32 @@
     object-fit: cover;
   }
 
-  .ul-producer-profile__products-placeholder {
-    max-width: 42rem;
-    padding: 1.5rem;
-    border: 1px dashed var(--ul-color-border);
-    border-radius: var(--ul-radius-base);
-    color: var(--ul-color-muted-foreground);
-    font-size: 0.875rem;
+  .ul-producer-profile__products {
+    margin-bottom: 2rem;
   }
 
-  .ul-producer-profile__products-placeholder p {
+  .ul-producer-profile__products-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .ul-producer-profile__products-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ul-producer-profile__products-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .ul-producer-profile__products-empty {
     margin: 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.9375rem;
   }
 {% endstylesheet %}
 
