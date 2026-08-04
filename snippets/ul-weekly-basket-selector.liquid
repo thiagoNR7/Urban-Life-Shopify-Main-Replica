@@ -5,38 +5,42 @@
   opcao "Tamanho" (valores Pequena/P, Media/M, Grande/G) - nao 3
   produtos separados.
 
-  *** DEMO TEMPORARIA DAS CESTAS ***
-  Como o produto ainda nao tem a opcao "Tamanho" nem os metafields
-  custom.itens_cesta_p/m/g cadastrados no Admin, este arquivo contem
-  atualmente um bloco de dados de demonstracao (listas de itens fixas +
-  "Preço em definição" + botao sempre desabilitado) so para permitir
-  visualizar o formato dos 3 tamanhos antes da configuracao real. Esse
-  bloco esta marcado explicitamente com comentarios
-  "DEMO TEMPORARIA DAS CESTAS" / "REMOVER QUANDO VARIANTES E METAFIELDS
-  FOREM CADASTRADOS" - procure por eles para remover quando o Admin
-  estiver configurado.
+  *** DEMO TEMPORARIA DAS COMPOSICOES ***
+  As variantes reais (opcao "Tamanho": Pequena/Media/Grande) ja existem
+  no Admin, entao preco, disponibilidade e o link do botao vem 100% das
+  variantes reais (variant_p/m/g abaixo). O unico dado ainda temporario
+  e a COMPOSICAO (lista de alimentos) de cada tamanho, porque os
+  metafields custom.itens_cesta_p/m/g ainda nao foram criados/preenchidos
+  no Admin - esse bloco esta marcado com comentarios
+  "DEMO TEMPORARIA DAS COMPOSICOES" / "SUBSTITUIR PELOS METAFIELDS
+  DEPOIS", mais abaixo no arquivo.
 
   IMPORTANTE: os 3 tamanhos SEMPRE sao renderizados (abas + paineis),
-  mesmo que o produto ainda nao tenha a opcao "Tamanho" configurada no
-  Admin - isso e o esperado antes da Etapa de configuracao (ver Admin).
-  So o que depende de cada variante existir de fato fica condicional
-  DENTRO do painel:
-  - se a variante existir: preco, disponibilidade, item habilitado no
-    botao com o ID/URL corretos;
-  - se a variante NAO existir ainda: mostra "Configuração da cesta
-    pendente." no lugar do preco, e so o botao final fica desabilitado
-    (o tamanho continua visivel e clicavel normalmente).
-  A composicao (custom.itens_cesta_p/m/g) tambem e independente da
-  variante existir ou nao - se o metafield estiver vazio, mostra
-  "Composição da cesta ainda não cadastrada." (nunca itens inventados).
+  independente de a variante existir ou nao (defesa contra regressao
+  futura no Admin) - so o que depende de cada variante existir de fato
+  fica condicional DENTRO do painel:
+  - se a variante existir: preco, disponibilidade, link/botao habilitado
+    com o ID/URL corretos (variant.id, variant.url ou
+    product.url?variant=variant.id como fallback);
+  - se a variante NAO existir: mostra "Configuração da cesta pendente."
+    no lugar do preco, e so o botao final fica desabilitado (o tamanho
+    continua visivel e clicavel normalmente, nunca escondido).
+  A estrutura condicional para "Composição da cesta ainda não
+  cadastrada." tambem continua no arquivo (fica pronta para quando
+  `display_items_p/m/g` voltar a apontar para os metafields reais), mas
+  hoje esta sempre com itens (a lista demo nunca fica vazia).
 
   O que este snippet faz:
   1. localiza, dentro de `product.variants`, a variante de cada tamanho
-     comparando o valor da opcao "Tamanho" (nao usa preco nem posicao
-     fixa) - se a opcao ainda nao existir no produto, todas ficam
-     simplesmente "sem variante" (nao gera erro);
-  2. le os 3 metafields de lista de texto com a composicao de cada
-     tamanho (custom.itens_cesta_p/m/g);
+     comparando `variant.title | strip | downcase` com os titulos reais
+     ('pequena (p)', 'média (m)'/'media (m)' com e sem acento, 'grande
+     (g)') - nao usa preco, estoque, posicao nem o indice da opcao
+     "Tamanho" (o produto tem uma unica opcao, entao o titulo da
+     variante ja e o proprio valor dela; se nenhum titulo bater, essa
+     variante simplesmente fica "sem variante", nao gera erro);
+  2. usa a lista de composicao demo (`demo_items_p/m/g`, ver bloco mais
+     abaixo) no lugar dos metafields custom.itens_cesta_p/m/g, que ainda
+     nao existem no Admin;
   3. renderiza sempre as 3 abas e os 3 paineis;
   4. deixa a Pequena ativa inicialmente.
   Troca de aba e feita por assets/ul-weekly-basket-selector.js, que so
@@ -52,40 +56,24 @@
 {%- enddoc -%}
 
 {%- liquid
-  assign size_option_index = -1
-  for option in product.options_with_values
-    if option.name == 'Tamanho'
-      assign size_option_index = forloop.index0
-    endif
-  endfor
-
   assign variant_p = blank
   assign variant_m = blank
   assign variant_g = blank
 
-  if size_option_index > -1
-    for variant in product.variants
-      assign size_value = variant.options[size_option_index] | strip | downcase
-      case size_value
-        when 'pequena', 'p'
-          if variant_p == blank
-            assign variant_p = variant
-          endif
-        when 'média', 'media', 'm'
-          if variant_m == blank
-            assign variant_m = variant
-          endif
-        when 'grande', 'g'
-          if variant_g == blank
-            assign variant_g = variant
-          endif
-      endcase
-    endfor
-  endif
+  for variant in product.variants
+    assign normalized_variant_title = variant.title | strip | downcase
 
-  assign items_p = product.metafields.custom.itens_cesta_p.value
-  assign items_m = product.metafields.custom.itens_cesta_m.value
-  assign items_g = product.metafields.custom.itens_cesta_g.value
+    case normalized_variant_title
+      when 'pequena (p)'
+        assign variant_p = variant
+      when 'média (m)'
+        assign variant_m = variant
+      when 'media (m)'
+        assign variant_m = variant
+      when 'grande (g)'
+        assign variant_g = variant
+    endcase
+  endfor
 
   assign variant_p_href = variant_p.url
   if variant_p_href == blank and variant_p != blank
@@ -105,40 +93,29 @@
 
 {%- comment -%}
   ============================================================
-  DEMO TEMPORARIA DAS CESTAS
-  REMOVER QUANDO VARIANTES E METAFIELDS FOREM CADASTRADOS
+  DEMO TEMPORARIA DAS COMPOSICOES
+  SUBSTITUIR PELOS METAFIELDS DEPOIS
   ============================================================
-  Enquanto o produto nao tiver a opcao "Tamanho" (variantes P/M/G) nem
-  os metafields custom.itens_cesta_p/m/g cadastrados no Admin, mostramos
-  aqui listas de itens FIXAS (so para o cliente visualizar o formato da
-  "Selecao da semana") e nunca preco/link reais - "Preço em definição" +
-  botao sempre desabilitado, para nao parecer que a compra ja funciona.
+  Os metafields custom.itens_cesta_p/m/g ainda nao existem/nao foram
+  preenchidos no Admin, entao a lista de alimentos de cada tamanho usa
+  estes dados FIXOS temporarios (preco/disponibilidade/botao, logo
+  abaixo em cada painel, ja sao 100% reais - vem de variant_p/m/g).
 
-  Para promover para producao (depois que Tamanho/variantes e os 3
-  metafields existirem no Admin): apague este bloco `assign demo_*` e,
-  nos 3 paineis abaixo, apague o `if demo_mode` de cada
-  `panel-footer` (mantendo so o `elsif`/`else` que ja le
-  variant_p/m/g), alem de trocar `display_items_p/m/g` de volta por
-  `items_p/m/g` nas abas e nas listas.
+  Para promover para producao (depois que os 3 metafields existirem e
+  estiverem preenchidos no Admin): troque `display_items_p/m/g` por
+  `items_p/m/g` nas abas e nos paineis abaixo, e apague este bloco de
+  assign (demo_items_p/m/g e as linhas display_items_* = demo_items_*).
 {%- endcomment -%}
 {%- liquid
-  assign demo_mode = true
-
   assign demo_items_p = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula' | split: '|'
   assign demo_items_m = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula|Tomate|Cenoura|Beterraba|Ora-pro-nóbis' | split: '|'
   assign demo_items_g = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula|Tomate|Cenoura|Beterraba|Ora-pro-nóbis|Almeirão|Escarola|Manjericão|Hortelã|Coentro|Abobrinha|Berinjela' | split: '|'
 
-  assign display_items_p = items_p
-  assign display_items_m = items_m
-  assign display_items_g = items_g
-
-  if demo_mode
-    assign display_items_p = demo_items_p
-    assign display_items_m = demo_items_m
-    assign display_items_g = demo_items_g
-  endif
+  assign display_items_p = demo_items_p
+  assign display_items_m = demo_items_m
+  assign display_items_g = demo_items_g
 -%}
-{%- comment -%} FIM DO BLOCO DE ASSIGN DA DEMO TEMPORARIA {%- endcomment -%}
+{%- comment -%} FIM DO BLOCO DE ASSIGN DA DEMO TEMPORARIA DAS COMPOSICOES {%- endcomment -%}
 
 <ul-weekly-basket-selector-component class="ul-weekly-basket" on:keydown="/onKeydown">
   <div class="ul-weekly-basket__tabs" role="tablist" aria-label="Tamanho da cesta">
@@ -219,13 +196,7 @@
       {%- endif -%}
 
       <div class="ul-weekly-basket__panel-footer">
-        {%- comment -%} DEMO TEMPORARIA DAS CESTAS - ver bloco de assign acima {%- endcomment -%}
-        {%- if demo_mode -%}
-          <span class="ul-weekly-basket__price-wrap">
-            <span class="ul-weekly-basket__price ul-weekly-basket__price--pending">Preço em definição</span>
-          </span>
-          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Configuração da cesta em andamento</button>
-        {%- elsif variant_p != blank -%}
+        {%- if variant_p != blank -%}
           <span class="ul-weekly-basket__price-wrap">
             <span class="ul-weekly-basket__price">{{ variant_p.price | money }}</span>
             {%- if variant_p.available -%}
@@ -272,13 +243,7 @@
       {%- endif -%}
 
       <div class="ul-weekly-basket__panel-footer">
-        {%- comment -%} DEMO TEMPORARIA DAS CESTAS - ver bloco de assign acima {%- endcomment -%}
-        {%- if demo_mode -%}
-          <span class="ul-weekly-basket__price-wrap">
-            <span class="ul-weekly-basket__price ul-weekly-basket__price--pending">Preço em definição</span>
-          </span>
-          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Configuração da cesta em andamento</button>
-        {%- elsif variant_m != blank -%}
+        {%- if variant_m != blank -%}
           <span class="ul-weekly-basket__price-wrap">
             <span class="ul-weekly-basket__price">{{ variant_m.price | money }}</span>
             {%- if variant_m.available -%}
@@ -325,13 +290,7 @@
       {%- endif -%}
 
       <div class="ul-weekly-basket__panel-footer">
-        {%- comment -%} DEMO TEMPORARIA DAS CESTAS - ver bloco de assign acima {%- endcomment -%}
-        {%- if demo_mode -%}
-          <span class="ul-weekly-basket__price-wrap">
-            <span class="ul-weekly-basket__price ul-weekly-basket__price--pending">Preço em definição</span>
-          </span>
-          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Configuração da cesta em andamento</button>
-        {%- elsif variant_g != blank -%}
+        {%- if variant_g != blank -%}
           <span class="ul-weekly-basket__price-wrap">
             <span class="ul-weekly-basket__price">{{ variant_g.price | money }}</span>
             {%- if variant_g.available -%}
@@ -489,12 +448,6 @@
     font-size: 1.125rem;
     font-weight: var(--ul-font-weight-bold);
     color: var(--ul-color-primary);
-  }
-
-  /* DEMO TEMPORARIA DAS CESTAS - remover junto com o restante da demo */
-  .ul-weekly-basket__price--pending {
-    color: var(--ul-color-muted-foreground);
-    font-style: italic;
   }
 
   .ul-weekly-basket__availability {
