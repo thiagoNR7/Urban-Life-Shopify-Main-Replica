@@ -46,6 +46,16 @@
   Liquid para cada tamanho, o JS nao monta HTML nem conhece nomes de
   produto/alimento.
 
+  Adicionar ao carrinho (Etapa 3.6): o link "Escolher Cesta X" de cada
+  tamanho disponivel leva `data-variant-id="{{ variant.id }}"` (nunca um
+  ID fixo) e `on:click="/addToCart"` - o JS intercepta o clique, faz
+  POST para `Theme.routes.cart_add_url` com `{ items: [{ id, quantity: 1
+  }] }` e, se der certo, redireciona para `Theme.routes.cart_url`
+  (nunca para a pagina do produto). O `href` real (com
+  `?variant=variant.id`) continua no link como fallback caso o JS nao
+  rode. Cada painel tem seu proprio `<p class="ul-weekly-basket__cart-error"
+  role="alert">` para mostrar erro sem `alert()` do navegador.
+
   @param {object} product - Produto "Cesta da Semana" do produtor (ja resolvido pela section).
 
   @example
@@ -197,7 +207,12 @@
           </span>
 
           {%- if variant_p.available -%}
-            <a href="{{ variant_p_href }}" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta">Escolher Cesta Pequena</a>
+            <a
+              href="{{ variant_p_href }}"
+              class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta"
+              data-variant-id="{{ variant_p.id }}"
+              on:click="/addToCart"
+            >Escolher Cesta Pequena</a>
           {%- else -%}
             <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Pequena</button>
           {%- endif -%}
@@ -206,6 +221,7 @@
           <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Pequena</button>
         {%- endif -%}
       </div>
+      <p class="ul-weekly-basket__cart-error" role="alert" hidden></p>
     </div>
 
     <div
@@ -244,7 +260,12 @@
           </span>
 
           {%- if variant_m.available -%}
-            <a href="{{ variant_m_href }}" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta">Escolher Cesta Média</a>
+            <a
+              href="{{ variant_m_href }}"
+              class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta"
+              data-variant-id="{{ variant_m.id }}"
+              on:click="/addToCart"
+            >Escolher Cesta Média</a>
           {%- else -%}
             <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Média</button>
           {%- endif -%}
@@ -253,6 +274,7 @@
           <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Média</button>
         {%- endif -%}
       </div>
+      <p class="ul-weekly-basket__cart-error" role="alert" hidden></p>
     </div>
 
     <div
@@ -291,7 +313,12 @@
           </span>
 
           {%- if variant_g.available -%}
-            <a href="{{ variant_g_href }}" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta">Escolher Cesta Grande</a>
+            <a
+              href="{{ variant_g_href }}"
+              class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta"
+              data-variant-id="{{ variant_g.id }}"
+              on:click="/addToCart"
+            >Escolher Cesta Grande</a>
           {%- else -%}
             <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Grande</button>
           {%- endif -%}
@@ -300,6 +327,7 @@
           <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Grande</button>
         {%- endif -%}
       </div>
+      <p class="ul-weekly-basket__cart-error" role="alert" hidden></p>
     </div>
   </div>
 </ul-weekly-basket-selector-component>
@@ -464,9 +492,22 @@
     min-width: 180px;
   }
 
-  .ul-weekly-basket__cta:disabled {
+  .ul-weekly-basket__cta:disabled,
+  .ul-weekly-basket__cta[aria-disabled='true'] {
     opacity: 0.5;
     cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .ul-weekly-basket__cart-error {
+    width: 100%;
+    margin: 0;
+    color: var(--ul-color-destructive);
+    font-size: 0.8125rem;
+  }
+
+  .ul-weekly-basket__cart-error[hidden] {
+    display: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
