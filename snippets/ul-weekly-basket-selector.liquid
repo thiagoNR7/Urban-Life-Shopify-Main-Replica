@@ -1,0 +1,540 @@
+{%- doc -%}
+  Seletor de tamanho de cesta (Pequena/Media/Grande) da "Selecao da
+  semana", no perfil do produtor (Etapa 3.11 - Urban Life). Modelo
+  Shopify: um unico produto "Cesta da Semana" por produtor, com uma
+  opcao "Tamanho" (valores Pequena/P, Media/M, Grande/G) - nao 3
+  produtos separados.
+
+  *** DEMO TEMPORARIA DAS CESTAS ***
+  Como o produto ainda nao tem a opcao "Tamanho" nem os metafields
+  custom.itens_cesta_p/m/g cadastrados no Admin, este arquivo contem
+  atualmente um bloco de dados de demonstracao (listas de itens fixas +
+  "Preço em definição" + botao sempre desabilitado) so para permitir
+  visualizar o formato dos 3 tamanhos antes da configuracao real. Esse
+  bloco esta marcado explicitamente com comentarios
+  "DEMO TEMPORARIA DAS CESTAS" / "REMOVER QUANDO VARIANTES E METAFIELDS
+  FOREM CADASTRADOS" - procure por eles para remover quando o Admin
+  estiver configurado.
+
+  IMPORTANTE: os 3 tamanhos SEMPRE sao renderizados (abas + paineis),
+  mesmo que o produto ainda nao tenha a opcao "Tamanho" configurada no
+  Admin - isso e o esperado antes da Etapa de configuracao (ver Admin).
+  So o que depende de cada variante existir de fato fica condicional
+  DENTRO do painel:
+  - se a variante existir: preco, disponibilidade, item habilitado no
+    botao com o ID/URL corretos;
+  - se a variante NAO existir ainda: mostra "Configuração da cesta
+    pendente." no lugar do preco, e so o botao final fica desabilitado
+    (o tamanho continua visivel e clicavel normalmente).
+  A composicao (custom.itens_cesta_p/m/g) tambem e independente da
+  variante existir ou nao - se o metafield estiver vazio, mostra
+  "Composição da cesta ainda não cadastrada." (nunca itens inventados).
+
+  O que este snippet faz:
+  1. localiza, dentro de `product.variants`, a variante de cada tamanho
+     comparando o valor da opcao "Tamanho" (nao usa preco nem posicao
+     fixa) - se a opcao ainda nao existir no produto, todas ficam
+     simplesmente "sem variante" (nao gera erro);
+  2. le os 3 metafields de lista de texto com a composicao de cada
+     tamanho (custom.itens_cesta_p/m/g);
+  3. renderiza sempre as 3 abas e os 3 paineis;
+  4. deixa a Pequena ativa inicialmente.
+  Troca de aba e feita por assets/ul-weekly-basket-selector.js, que so
+  alterna qual painel fica visivel (`hidden`) e atualiza aria-selected -
+  todo o conteudo (preco, disponibilidade, itens, link) ja vem pronto do
+  Liquid para cada tamanho, o JS nao monta HTML nem conhece nomes de
+  produto/alimento.
+
+  @param {object} product - Produto "Cesta da Semana" do produtor (ja resolvido pela section).
+
+  @example
+  {% render 'ul-weekly-basket-selector', product: product %}
+{%- enddoc -%}
+
+{%- liquid
+  assign size_option_index = -1
+  for option in product.options_with_values
+    if option.name == 'Tamanho'
+      assign size_option_index = forloop.index0
+    endif
+  endfor
+
+  assign variant_p = blank
+  assign variant_m = blank
+  assign variant_g = blank
+
+  if size_option_index > -1
+    for variant in product.variants
+      assign size_value = variant.options[size_option_index] | strip | downcase
+      case size_value
+        when 'pequena', 'p'
+          if variant_p == blank
+            assign variant_p = variant
+          endif
+        when 'média', 'media', 'm'
+          if variant_m == blank
+            assign variant_m = variant
+          endif
+        when 'grande', 'g'
+          if variant_g == blank
+            assign variant_g = variant
+          endif
+      endcase
+    endfor
+  endif
+
+  assign items_p = product.metafields.custom.itens_cesta_p.value
+  assign items_m = product.metafields.custom.itens_cesta_m.value
+  assign items_g = product.metafields.custom.itens_cesta_g.value
+
+  assign variant_p_href = variant_p.url
+  if variant_p_href == blank and variant_p != blank
+    assign variant_p_href = product.url | append: '?variant=' | append: variant_p.id
+  endif
+
+  assign variant_m_href = variant_m.url
+  if variant_m_href == blank and variant_m != blank
+    assign variant_m_href = product.url | append: '?variant=' | append: variant_m.id
+  endif
+
+  assign variant_g_href = variant_g.url
+  if variant_g_href == blank and variant_g != blank
+    assign variant_g_href = product.url | append: '?variant=' | append: variant_g.id
+  endif
+-%}
+
+{%- comment -%}
+  ============================================================
+  DEMO TEMPORARIA DAS CESTAS
+  REMOVER QUANDO VARIANTES E METAFIELDS FOREM CADASTRADOS
+  ============================================================
+  Enquanto o produto nao tiver a opcao "Tamanho" (variantes P/M/G) nem
+  os metafields custom.itens_cesta_p/m/g cadastrados no Admin, mostramos
+  aqui listas de itens FIXAS (so para o cliente visualizar o formato da
+  "Selecao da semana") e nunca preco/link reais - "Preço em definição" +
+  botao sempre desabilitado, para nao parecer que a compra ja funciona.
+
+  Para promover para producao (depois que Tamanho/variantes e os 3
+  metafields existirem no Admin): apague este bloco `assign demo_*` e,
+  nos 3 paineis abaixo, apague o `if demo_mode` de cada
+  `panel-footer` (mantendo so o `elsif`/`else` que ja le
+  variant_p/m/g), alem de trocar `display_items_p/m/g` de volta por
+  `items_p/m/g` nas abas e nas listas.
+{%- endcomment -%}
+{%- liquid
+  assign demo_mode = true
+
+  assign demo_items_p = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula' | split: '|'
+  assign demo_items_m = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula|Tomate|Cenoura|Beterraba|Ora-pro-nóbis' | split: '|'
+  assign demo_items_g = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula|Tomate|Cenoura|Beterraba|Ora-pro-nóbis|Almeirão|Escarola|Manjericão|Hortelã|Coentro|Abobrinha|Berinjela' | split: '|'
+
+  assign display_items_p = items_p
+  assign display_items_m = items_m
+  assign display_items_g = items_g
+
+  if demo_mode
+    assign display_items_p = demo_items_p
+    assign display_items_m = demo_items_m
+    assign display_items_g = demo_items_g
+  endif
+-%}
+{%- comment -%} FIM DO BLOCO DE ASSIGN DA DEMO TEMPORARIA {%- endcomment -%}
+
+<ul-weekly-basket-selector-component class="ul-weekly-basket" on:keydown="/onKeydown">
+  <div class="ul-weekly-basket__tabs" role="tablist" aria-label="Tamanho da cesta">
+    <button
+      type="button"
+      class="ul-weekly-basket__tab"
+      role="tab"
+      id="ul-basket-tab-p-{{ product.id }}"
+      aria-controls="ul-basket-panel-p-{{ product.id }}"
+      aria-selected="true"
+      tabindex="0"
+      data-size="p"
+      ref="tabs[]"
+      on:click="/select/p"
+    >
+      <span class="ul-weekly-basket__tab-letter">P</span>
+      <span class="ul-weekly-basket__tab-name">Pequena</span>
+      <span class="ul-weekly-basket__tab-count">{{ display_items_p.size }} itens</span>
+    </button>
+
+    <button
+      type="button"
+      class="ul-weekly-basket__tab"
+      role="tab"
+      id="ul-basket-tab-m-{{ product.id }}"
+      aria-controls="ul-basket-panel-m-{{ product.id }}"
+      aria-selected="false"
+      tabindex="-1"
+      data-size="m"
+      ref="tabs[]"
+      on:click="/select/m"
+    >
+      <span class="ul-weekly-basket__tab-letter">M</span>
+      <span class="ul-weekly-basket__tab-name">Média</span>
+      <span class="ul-weekly-basket__tab-count">{{ display_items_m.size }} itens</span>
+    </button>
+
+    <button
+      type="button"
+      class="ul-weekly-basket__tab"
+      role="tab"
+      id="ul-basket-tab-g-{{ product.id }}"
+      aria-controls="ul-basket-panel-g-{{ product.id }}"
+      aria-selected="false"
+      tabindex="-1"
+      data-size="g"
+      ref="tabs[]"
+      on:click="/select/g"
+    >
+      <span class="ul-weekly-basket__tab-letter">G</span>
+      <span class="ul-weekly-basket__tab-name">Grande</span>
+      <span class="ul-weekly-basket__tab-count">{{ display_items_g.size }} itens</span>
+    </button>
+  </div>
+
+  <div class="ul-weekly-basket__panels">
+    <div
+      class="ul-weekly-basket__panel"
+      role="tabpanel"
+      id="ul-basket-panel-p-{{ product.id }}"
+      aria-labelledby="ul-basket-tab-p-{{ product.id }}"
+      data-size="p"
+      ref="panels[]"
+    >
+      <div class="ul-weekly-basket__panel-head">
+        <h3 class="ul-weekly-basket__panel-name">Cesta Pequena</h3>
+        <p class="ul-weekly-basket__panel-count">Contém {{ display_items_p.size }} itens desta semana</p>
+      </div>
+
+      {%- if display_items_p.size > 0 -%}
+        <ul class="ul-weekly-basket__items">
+          {%- for item in display_items_p -%}
+            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item }}</li>
+          {%- endfor -%}
+        </ul>
+      {%- else -%}
+        <p class="ul-weekly-basket__items-empty">Composição da cesta ainda não cadastrada.</p>
+      {%- endif -%}
+
+      <div class="ul-weekly-basket__panel-footer">
+        {%- comment -%} DEMO TEMPORARIA DAS CESTAS - ver bloco de assign acima {%- endcomment -%}
+        {%- if demo_mode -%}
+          <span class="ul-weekly-basket__price-wrap">
+            <span class="ul-weekly-basket__price ul-weekly-basket__price--pending">Preço em definição</span>
+          </span>
+          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Configuração da cesta em andamento</button>
+        {%- elsif variant_p != blank -%}
+          <span class="ul-weekly-basket__price-wrap">
+            <span class="ul-weekly-basket__price">{{ variant_p.price | money }}</span>
+            {%- if variant_p.available -%}
+              <span class="ul-weekly-basket__availability ul-weekly-basket__availability--in-stock">Disponível</span>
+            {%- else -%}
+              <span class="ul-weekly-basket__availability ul-weekly-basket__availability--out-of-stock">Esgotado</span>
+            {%- endif -%}
+          </span>
+
+          {%- if variant_p.available -%}
+            <a href="{{ variant_p_href }}" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta">Escolher Cesta Pequena</a>
+          {%- else -%}
+            <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Pequena</button>
+          {%- endif -%}
+        {%- else -%}
+          <span class="ul-weekly-basket__pending">Configuração da cesta pendente.</span>
+          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Pequena</button>
+        {%- endif -%}
+      </div>
+    </div>
+
+    <div
+      class="ul-weekly-basket__panel"
+      role="tabpanel"
+      id="ul-basket-panel-m-{{ product.id }}"
+      aria-labelledby="ul-basket-tab-m-{{ product.id }}"
+      data-size="m"
+      ref="panels[]"
+      hidden
+    >
+      <div class="ul-weekly-basket__panel-head">
+        <h3 class="ul-weekly-basket__panel-name">Cesta Média</h3>
+        <p class="ul-weekly-basket__panel-count">Contém {{ display_items_m.size }} itens desta semana</p>
+      </div>
+
+      {%- if display_items_m.size > 0 -%}
+        <ul class="ul-weekly-basket__items">
+          {%- for item in display_items_m -%}
+            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item }}</li>
+          {%- endfor -%}
+        </ul>
+      {%- else -%}
+        <p class="ul-weekly-basket__items-empty">Composição da cesta ainda não cadastrada.</p>
+      {%- endif -%}
+
+      <div class="ul-weekly-basket__panel-footer">
+        {%- comment -%} DEMO TEMPORARIA DAS CESTAS - ver bloco de assign acima {%- endcomment -%}
+        {%- if demo_mode -%}
+          <span class="ul-weekly-basket__price-wrap">
+            <span class="ul-weekly-basket__price ul-weekly-basket__price--pending">Preço em definição</span>
+          </span>
+          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Configuração da cesta em andamento</button>
+        {%- elsif variant_m != blank -%}
+          <span class="ul-weekly-basket__price-wrap">
+            <span class="ul-weekly-basket__price">{{ variant_m.price | money }}</span>
+            {%- if variant_m.available -%}
+              <span class="ul-weekly-basket__availability ul-weekly-basket__availability--in-stock">Disponível</span>
+            {%- else -%}
+              <span class="ul-weekly-basket__availability ul-weekly-basket__availability--out-of-stock">Esgotado</span>
+            {%- endif -%}
+          </span>
+
+          {%- if variant_m.available -%}
+            <a href="{{ variant_m_href }}" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta">Escolher Cesta Média</a>
+          {%- else -%}
+            <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Média</button>
+          {%- endif -%}
+        {%- else -%}
+          <span class="ul-weekly-basket__pending">Configuração da cesta pendente.</span>
+          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Média</button>
+        {%- endif -%}
+      </div>
+    </div>
+
+    <div
+      class="ul-weekly-basket__panel"
+      role="tabpanel"
+      id="ul-basket-panel-g-{{ product.id }}"
+      aria-labelledby="ul-basket-tab-g-{{ product.id }}"
+      data-size="g"
+      ref="panels[]"
+      hidden
+    >
+      <div class="ul-weekly-basket__panel-head">
+        <h3 class="ul-weekly-basket__panel-name">Cesta Grande</h3>
+        <p class="ul-weekly-basket__panel-count">Contém {{ display_items_g.size }} itens desta semana</p>
+      </div>
+
+      {%- if display_items_g.size > 0 -%}
+        <ul class="ul-weekly-basket__items">
+          {%- for item in display_items_g -%}
+            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item }}</li>
+          {%- endfor -%}
+        </ul>
+      {%- else -%}
+        <p class="ul-weekly-basket__items-empty">Composição da cesta ainda não cadastrada.</p>
+      {%- endif -%}
+
+      <div class="ul-weekly-basket__panel-footer">
+        {%- comment -%} DEMO TEMPORARIA DAS CESTAS - ver bloco de assign acima {%- endcomment -%}
+        {%- if demo_mode -%}
+          <span class="ul-weekly-basket__price-wrap">
+            <span class="ul-weekly-basket__price ul-weekly-basket__price--pending">Preço em definição</span>
+          </span>
+          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Configuração da cesta em andamento</button>
+        {%- elsif variant_g != blank -%}
+          <span class="ul-weekly-basket__price-wrap">
+            <span class="ul-weekly-basket__price">{{ variant_g.price | money }}</span>
+            {%- if variant_g.available -%}
+              <span class="ul-weekly-basket__availability ul-weekly-basket__availability--in-stock">Disponível</span>
+            {%- else -%}
+              <span class="ul-weekly-basket__availability ul-weekly-basket__availability--out-of-stock">Esgotado</span>
+            {%- endif -%}
+          </span>
+
+          {%- if variant_g.available -%}
+            <a href="{{ variant_g_href }}" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta">Escolher Cesta Grande</a>
+          {%- else -%}
+            <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Grande</button>
+          {%- endif -%}
+        {%- else -%}
+          <span class="ul-weekly-basket__pending">Configuração da cesta pendente.</span>
+          <button type="button" class="ul-btn ul-btn--solid ul-btn--lg ul-weekly-basket__cta" disabled>Escolher Cesta Grande</button>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</ul-weekly-basket-selector-component>
+
+<script src="{{ 'ul-weekly-basket-selector.js' | asset_url }}" type="module"></script>
+
+{% stylesheet %}
+  .ul-weekly-basket {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .ul-weekly-basket__tabs {
+    display: flex;
+    gap: 6px;
+  }
+
+  .ul-weekly-basket__tab {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    min-height: 44px;
+    padding: 6px 8px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-base);
+    background: var(--ul-color-background);
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    text-align: center;
+    cursor: pointer;
+    transition: background var(--ul-transition-fast), color var(--ul-transition-fast), border-color var(--ul-transition-fast);
+  }
+
+  .ul-weekly-basket__tab-letter {
+    font-size: 0.9375rem;
+    font-weight: var(--ul-font-weight-bold);
+    line-height: 1.2;
+  }
+
+  .ul-weekly-basket__tab-name {
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-semibold);
+  }
+
+  .ul-weekly-basket__tab-count {
+    font-size: 0.6875rem;
+    opacity: 0.75;
+  }
+
+  .ul-weekly-basket__tab[aria-selected='true'] {
+    background: var(--ul-color-primary);
+    border-color: var(--ul-color-primary);
+    color: var(--ul-color-primary-foreground);
+  }
+
+  .ul-weekly-basket__tab:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+  }
+
+  .ul-weekly-basket__panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .ul-weekly-basket__panel-name {
+    margin: 0;
+    font-family: var(--ul-font-family);
+    font-size: 0.9375rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-weekly-basket__panel-count {
+    margin: 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.75rem;
+  }
+
+  .ul-weekly-basket__items {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1rem;
+    row-gap: 3px;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ul-weekly-basket__items li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    color: var(--ul-color-foreground);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ul-weekly-basket__item-icon {
+    flex-shrink: 0;
+    color: var(--ul-color-primary);
+  }
+
+  .ul-weekly-basket__items-empty {
+    margin: 0.5rem 0 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.8125rem;
+    font-style: italic;
+  }
+
+  .ul-weekly-basket__panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 0.375rem;
+  }
+
+  .ul-weekly-basket__price-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .ul-weekly-basket__price {
+    font-size: 1.125rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-primary);
+  }
+
+  /* DEMO TEMPORARIA DAS CESTAS - remover junto com o restante da demo */
+  .ul-weekly-basket__price--pending {
+    color: var(--ul-color-muted-foreground);
+    font-style: italic;
+  }
+
+  .ul-weekly-basket__availability {
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-medium);
+  }
+
+  .ul-weekly-basket__availability--in-stock {
+    color: var(--ul-color-olive-light);
+  }
+
+  .ul-weekly-basket__availability--out-of-stock {
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-weekly-basket__pending {
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.8125rem;
+    font-style: italic;
+  }
+
+  .ul-weekly-basket__cta {
+    flex: 1 1 auto;
+    min-width: 180px;
+  }
+
+  .ul-weekly-basket__cta:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ul-weekly-basket__tab {
+      transition: none;
+    }
+  }
+
+  @media (min-width: 480px) {
+    .ul-weekly-basket__cta {
+      flex: 0 0 auto;
+    }
+  }
+{% endstylesheet %}

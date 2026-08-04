@@ -1,0 +1,333 @@
+{%- doc -%}
+  Carrossel leve para a pagina de perfil do produtor (Etapa 3.8 - Urban
+  Life). Fontes de imagem, nesta ordem, quando preenchidas: foto_capa,
+  foto_cultivos, foto_perfil, foto_card (todas do metaobject `produtor`).
+  Campos vazios sao pulados; imagens que apontam para o mesmo arquivo
+  (mesmo id) nao sao repetidas; a foto_perfil so entra se tiver largura
+  suficiente para o painel grande (evita esticar um avatar pequeno).
+
+  Importante (correcao do "wrong number of arguments (given 3, expected
+  2)"): filtros como `append` NAO podem ser encadeados dentro de um
+  parametro nomeado de `image_tag:` (ex.: `alt: 'Horta ' | append:
+  brand_title, loading: ...` faz o parser ler a virgula seguinte como
+  mais um argumento do `append`). Por isso todo alt text e pre-calculado
+  numa variavel (`slide_alt`) ANTES do `image_tag`, e so a variavel e
+  passada para `alt:`.
+
+  Sem apps ou bibliotecas externas: navegacao via scroll nativo
+  (scroll-snap) controlado por assets/ul-producer-gallery.js (web
+  component declarativo, no padrao @theme/component do tema), com
+  setas, dots, teclado e respeito a prefers-reduced-motion. Autoplay de
+  1s (com loop), pausado com mouse sobre o carrossel, foco em algum
+  controle, ou aba oculta - e desativado por completo quando
+  prefers-reduced-motion estiver ativo (a navegacao manual continua
+  funcionando normalmente). So roda com mais de 1 slide.
+
+  Importante (Etapa 3.12 - correcao de scroll da pagina durante o
+  autoplay): a troca de slide usa `track.scrollTo({ left, behavior })`
+  no proprio elemento scrollavel do carrossel, nunca
+  `slide.scrollIntoView(...)` - scrollIntoView, mesmo com
+  block:'nearest', podia arrastar tambem o scroll vertical da pagina.
+  Nenhum foco programatico e disparado ao trocar de slide (nem no
+  autoplay, nem no clique manual). `.ul-producer-gallery` tem
+  `overflow-anchor: none` (so na moldura do carrossel, nao no
+  body/pagina) como reforco contra o scroll anchoring do navegador.
+
+  @param {object} producer - Entrada do metaobject `produtor`.
+  @param {string} brand_title - Nome da horta/marca (ja resolvido pela section), usado nos alt texts.
+
+  @example
+  {% render 'ul-producer-gallery', producer: producer, brand_title: brand_title %}
+{%- enddoc -%}
+
+{%- liquid
+  assign min_profile_photo_width = 640
+
+  assign gallery_slide_count = 0
+  assign seen_image_ids = ''
+  assign is_first_slide = true
+-%}
+
+<ul-producer-gallery-component class="ul-producer-gallery" on:keydown="/onKeydown">
+  <div class="ul-producer-gallery__track" ref="track">
+    {%- comment -%} 1. Foto da horta (capa) {%- endcomment -%}
+    {%- if producer.foto_capa.value != blank -%}
+      {%- assign candidate_image = producer.foto_capa.value -%}
+      {%- assign candidate_token = '|' | append: candidate_image.id | append: '|' -%}
+      {%- unless seen_image_ids contains candidate_token -%}
+        {%- assign slide_loading = 'lazy' -%}
+        {%- if is_first_slide -%}
+          {%- assign slide_loading = 'eager' -%}
+        {%- endif -%}
+        {%- assign slide_alt = 'Horta ' | append: brand_title -%}
+        <div class="ul-producer-gallery__slide" ref="slides[]">
+          {{
+            candidate_image
+            | image_url: width: 1400
+            | image_tag:
+              alt: slide_alt,
+              loading: slide_loading,
+              sizes: '(min-width: 1024px) 60vw, 100vw',
+              widths: '700, 1000, 1400',
+              class: 'ul-producer-gallery__img'
+          }}
+        </div>
+        {%- assign seen_image_ids = seen_image_ids | append: candidate_token -%}
+        {%- assign gallery_slide_count = gallery_slide_count | plus: 1 -%}
+        {%- assign is_first_slide = false -%}
+      {%- endunless -%}
+    {%- endif -%}
+
+    {%- comment -%} 2. Cultivos / colheita {%- endcomment -%}
+    {%- if producer.foto_cultivos.value != blank -%}
+      {%- assign candidate_image = producer.foto_cultivos.value -%}
+      {%- assign candidate_token = '|' | append: candidate_image.id | append: '|' -%}
+      {%- unless seen_image_ids contains candidate_token -%}
+        {%- assign slide_loading = 'lazy' -%}
+        {%- if is_first_slide -%}
+          {%- assign slide_loading = 'eager' -%}
+        {%- endif -%}
+        {%- assign slide_alt = 'Cultivos da horta ' | append: brand_title -%}
+        <div class="ul-producer-gallery__slide" ref="slides[]">
+          {{
+            candidate_image
+            | image_url: width: 1400
+            | image_tag:
+              alt: slide_alt,
+              loading: slide_loading,
+              sizes: '(min-width: 1024px) 60vw, 100vw',
+              widths: '700, 1000, 1400',
+              class: 'ul-producer-gallery__img'
+          }}
+        </div>
+        {%- assign seen_image_ids = seen_image_ids | append: candidate_token -%}
+        {%- assign gallery_slide_count = gallery_slide_count | plus: 1 -%}
+        {%- assign is_first_slide = false -%}
+      {%- endunless -%}
+    {%- endif -%}
+
+    {%- comment -%} 3. Produtor - so entra se a foto tiver resolucao suficiente para o painel grande {%- endcomment -%}
+    {%- if producer.foto_perfil.value != blank and producer.foto_perfil.value.width >= min_profile_photo_width -%}
+      {%- assign candidate_image = producer.foto_perfil.value -%}
+      {%- assign candidate_token = '|' | append: candidate_image.id | append: '|' -%}
+      {%- unless seen_image_ids contains candidate_token -%}
+        {%- assign slide_loading = 'lazy' -%}
+        {%- if is_first_slide -%}
+          {%- assign slide_loading = 'eager' -%}
+        {%- endif -%}
+        {%- assign slide_alt = 'Produtor responsável pela ' | append: brand_title -%}
+        <div class="ul-producer-gallery__slide" ref="slides[]">
+          {{
+            candidate_image
+            | image_url: width: 1400
+            | image_tag:
+              alt: slide_alt,
+              loading: slide_loading,
+              sizes: '(min-width: 1024px) 60vw, 100vw',
+              widths: '700, 1000, 1400',
+              class: 'ul-producer-gallery__img'
+          }}
+        </div>
+        {%- assign seen_image_ids = seen_image_ids | append: candidate_token -%}
+        {%- assign gallery_slide_count = gallery_slide_count | plus: 1 -%}
+        {%- assign is_first_slide = false -%}
+      {%- endunless -%}
+    {%- endif -%}
+
+    {%- comment -%} 4. Cesta / card {%- endcomment -%}
+    {%- if producer.foto_card.value != blank -%}
+      {%- assign candidate_image = producer.foto_card.value -%}
+      {%- assign candidate_token = '|' | append: candidate_image.id | append: '|' -%}
+      {%- unless seen_image_ids contains candidate_token -%}
+        {%- assign slide_loading = 'lazy' -%}
+        {%- if is_first_slide -%}
+          {%- assign slide_loading = 'eager' -%}
+        {%- endif -%}
+        {%- assign slide_alt = 'Cesta da ' | append: brand_title -%}
+        <div class="ul-producer-gallery__slide" ref="slides[]">
+          {{
+            candidate_image
+            | image_url: width: 1400
+            | image_tag:
+              alt: slide_alt,
+              loading: slide_loading,
+              sizes: '(min-width: 1024px) 60vw, 100vw',
+              widths: '700, 1000, 1400',
+              class: 'ul-producer-gallery__img'
+          }}
+        </div>
+        {%- assign seen_image_ids = seen_image_ids | append: candidate_token -%}
+        {%- assign gallery_slide_count = gallery_slide_count | plus: 1 -%}
+        {%- assign is_first_slide = false -%}
+      {%- endunless -%}
+    {%- endif -%}
+
+    {%- if gallery_slide_count == 0 -%}
+      <div class="ul-producer-gallery__slide ul-producer-gallery__slide--fallback" ref="slides[]">
+        <span class="ul-producer-gallery__fallback-icon">
+          {% render 'ul-icon', name: 'sprout', size: 64 %}
+        </span>
+      </div>
+    {%- endif -%}
+  </div>
+
+  {%- if gallery_slide_count > 1 -%}
+    <button type="button" class="ul-producer-gallery__arrow ul-producer-gallery__arrow--prev" ref="prevButton" on:click="/prev" aria-label="Imagem anterior">
+      {% render 'ul-icon', name: 'arrow-right', size: 18 %}
+    </button>
+    <button type="button" class="ul-producer-gallery__arrow ul-producer-gallery__arrow--next" ref="nextButton" on:click="/next" aria-label="Próxima imagem">
+      {% render 'ul-icon', name: 'arrow-right', size: 18 %}
+    </button>
+
+    <div class="ul-producer-gallery__dots">
+      {%- for i in (1..gallery_slide_count) -%}
+        <button
+          type="button"
+          class="ul-producer-gallery__dot{% if forloop.first %} is-active{% endif %}"
+          ref="dots[]"
+          on:click="/select/{{ forloop.index0 }}"
+          aria-label="Ir para imagem {{ forloop.index }}"
+          {% if forloop.first %}aria-current="true"{% endif %}
+        ></button>
+      {%- endfor -%}
+    </div>
+  {%- endif -%}
+</ul-producer-gallery-component>
+
+<script src="{{ 'ul-producer-gallery.js' | asset_url }}" type="module"></script>
+
+{% stylesheet %}
+  .ul-producer-gallery {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 280px;
+    overflow: hidden;
+    overflow-anchor: none;
+    border-radius: var(--ul-radius-lg);
+    background: rgb(var(--ul-color-primary-rgb) / 0.08);
+    box-shadow: var(--ul-shadow-carousel);
+  }
+
+  .ul-producer-gallery__track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .ul-producer-gallery__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ul-producer-gallery__slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .ul-producer-gallery__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 45%;
+  }
+
+  .ul-producer-gallery__slide--fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ul-color-olive-light);
+  }
+
+  .ul-producer-gallery__arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.9);
+    color: var(--ul-color-primary);
+    box-shadow: var(--ul-shadow-card-sm);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: background var(--ul-transition-fast), opacity var(--ul-transition-fast);
+  }
+
+  .ul-producer-gallery__arrow:hover,
+  .ul-producer-gallery__arrow:focus-visible {
+    background: var(--ul-color-white);
+  }
+
+  .ul-producer-gallery__arrow:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+  }
+
+  .ul-producer-gallery__arrow:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .ul-producer-gallery__arrow--prev {
+    left: 14px;
+  }
+
+  .ul-producer-gallery__arrow--prev svg {
+    transform: rotate(180deg);
+  }
+
+  .ul-producer-gallery__arrow--next {
+    right: 14px;
+  }
+
+  .ul-producer-gallery__dots {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    z-index: 2;
+    display: flex;
+    gap: 6px;
+    transform: translateX(-50%);
+  }
+
+  .ul-producer-gallery__dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.6);
+    cursor: pointer;
+    transition: background var(--ul-transition-fast), transform var(--ul-transition-fast);
+  }
+
+  .ul-producer-gallery__dot:focus-visible {
+    outline: 2px solid var(--ul-color-white);
+    outline-offset: 2px;
+  }
+
+  .ul-producer-gallery__dot.is-active {
+    background: var(--ul-color-white);
+    transform: scale(1.2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ul-producer-gallery__dot {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
