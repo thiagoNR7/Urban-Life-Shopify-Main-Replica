@@ -5,15 +5,11 @@
   opcao "Tamanho" (valores Pequena/P, Media/M, Grande/G) - nao 3
   produtos separados.
 
-  *** DEMO TEMPORARIA DAS COMPOSICOES ***
-  As variantes reais (opcao "Tamanho": Pequena/Media/Grande) ja existem
-  no Admin, entao preco, disponibilidade e o link do botao vem 100% das
-  variantes reais (variant_p/m/g abaixo). O unico dado ainda temporario
-  e a COMPOSICAO (lista de alimentos) de cada tamanho, porque os
-  metafields custom.itens_cesta_p/m/g ainda nao foram criados/preenchidos
-  no Admin - esse bloco esta marcado com comentarios
-  "DEMO TEMPORARIA DAS COMPOSICOES" / "SUBSTITUIR PELOS METAFIELDS
-  DEPOIS", mais abaixo no arquivo.
+  Preco, disponibilidade e o link do botao vem 100% das variantes reais
+  (variant_p/m/g abaixo). A composicao (lista de alimentos) de cada
+  tamanho tambem e 100% real, lida direto de
+  product.metafields.custom.itens_cesta_p/m/g.value - nao ha mais
+  nenhum dado de composicao fixo no Liquid.
 
   IMPORTANTE: os 3 tamanhos SEMPRE sao renderizados (abas + paineis),
   independente de a variante existir ou nao (defesa contra regressao
@@ -25,10 +21,10 @@
   - se a variante NAO existir: mostra "Configuração da cesta pendente."
     no lugar do preco, e so o botao final fica desabilitado (o tamanho
     continua visivel e clicavel normalmente, nunca escondido).
-  A estrutura condicional para "Composição da cesta ainda não
-  cadastrada." tambem continua no arquivo (fica pronta para quando
-  `display_items_p/m/g` voltar a apontar para os metafields reais), mas
-  hoje esta sempre com itens (a lista demo nunca fica vazia).
+  A composicao segue a mesma logica de forma independente: se o
+  metafield estiver vazio (ainda nao cadastrado no Admin), mostra
+  "Composição da cesta ainda não cadastrada." no lugar da lista - nunca
+  itens inventados, e nunca esconde o tamanho por causa disso.
 
   O que este snippet faz:
   1. localiza, dentro de `product.variants`, a variante de cada tamanho
@@ -38,9 +34,10 @@
      "Tamanho" (o produto tem uma unica opcao, entao o titulo da
      variante ja e o proprio valor dela; se nenhum titulo bater, essa
      variante simplesmente fica "sem variante", nao gera erro);
-  2. usa a lista de composicao demo (`demo_items_p/m/g`, ver bloco mais
-     abaixo) no lugar dos metafields custom.itens_cesta_p/m/g, que ainda
-     nao existem no Admin;
+  2. le a composicao de cada tamanho direto dos metafields de lista de
+     texto custom.itens_cesta_p/m/g (`.value`), com a contagem exibida
+     (abas e "Contém N itens/item desta semana") sempre calculada a
+     partir do tamanho real de cada lista;
   3. renderiza sempre as 3 abas e os 3 paineis;
   4. deixa a Pequena ativa inicialmente.
   Troca de aba e feita por assets/ul-weekly-basket-selector.js, que so
@@ -89,33 +86,26 @@
   if variant_g_href == blank and variant_g != blank
     assign variant_g_href = product.url | append: '?variant=' | append: variant_g.id
   endif
+
+  assign items_p = product.metafields.custom.itens_cesta_p.value
+  assign items_m = product.metafields.custom.itens_cesta_m.value
+  assign items_g = product.metafields.custom.itens_cesta_g.value
+
+  assign items_p_label = 'itens'
+  if items_p.size == 1
+    assign items_p_label = 'item'
+  endif
+
+  assign items_m_label = 'itens'
+  if items_m.size == 1
+    assign items_m_label = 'item'
+  endif
+
+  assign items_g_label = 'itens'
+  if items_g.size == 1
+    assign items_g_label = 'item'
+  endif
 -%}
-
-{%- comment -%}
-  ============================================================
-  DEMO TEMPORARIA DAS COMPOSICOES
-  SUBSTITUIR PELOS METAFIELDS DEPOIS
-  ============================================================
-  Os metafields custom.itens_cesta_p/m/g ainda nao existem/nao foram
-  preenchidos no Admin, entao a lista de alimentos de cada tamanho usa
-  estes dados FIXOS temporarios (preco/disponibilidade/botao, logo
-  abaixo em cada painel, ja sao 100% reais - vem de variant_p/m/g).
-
-  Para promover para producao (depois que os 3 metafields existirem e
-  estiverem preenchidos no Admin): troque `display_items_p/m/g` por
-  `items_p/m/g` nas abas e nos paineis abaixo, e apague este bloco de
-  assign (demo_items_p/m/g e as linhas display_items_* = demo_items_*).
-{%- endcomment -%}
-{%- liquid
-  assign demo_items_p = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula' | split: '|'
-  assign demo_items_m = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula|Tomate|Cenoura|Beterraba|Ora-pro-nóbis' | split: '|'
-  assign demo_items_g = 'Alface lisa|Couve|Cebolinha|Salsinha|Rúcula|Tomate|Cenoura|Beterraba|Ora-pro-nóbis|Almeirão|Escarola|Manjericão|Hortelã|Coentro|Abobrinha|Berinjela' | split: '|'
-
-  assign display_items_p = demo_items_p
-  assign display_items_m = demo_items_m
-  assign display_items_g = demo_items_g
--%}
-{%- comment -%} FIM DO BLOCO DE ASSIGN DA DEMO TEMPORARIA DAS COMPOSICOES {%- endcomment -%}
 
 <ul-weekly-basket-selector-component class="ul-weekly-basket" on:keydown="/onKeydown">
   <div class="ul-weekly-basket__tabs" role="tablist" aria-label="Tamanho da cesta">
@@ -133,7 +123,7 @@
     >
       <span class="ul-weekly-basket__tab-letter">P</span>
       <span class="ul-weekly-basket__tab-name">Pequena</span>
-      <span class="ul-weekly-basket__tab-count">{{ display_items_p.size }} itens</span>
+      <span class="ul-weekly-basket__tab-count">{{ items_p.size }} {{ items_p_label }}</span>
     </button>
 
     <button
@@ -150,7 +140,7 @@
     >
       <span class="ul-weekly-basket__tab-letter">M</span>
       <span class="ul-weekly-basket__tab-name">Média</span>
-      <span class="ul-weekly-basket__tab-count">{{ display_items_m.size }} itens</span>
+      <span class="ul-weekly-basket__tab-count">{{ items_m.size }} {{ items_m_label }}</span>
     </button>
 
     <button
@@ -167,7 +157,7 @@
     >
       <span class="ul-weekly-basket__tab-letter">G</span>
       <span class="ul-weekly-basket__tab-name">Grande</span>
-      <span class="ul-weekly-basket__tab-count">{{ display_items_g.size }} itens</span>
+      <span class="ul-weekly-basket__tab-count">{{ items_g.size }} {{ items_g_label }}</span>
     </button>
   </div>
 
@@ -182,13 +172,13 @@
     >
       <div class="ul-weekly-basket__panel-head">
         <h3 class="ul-weekly-basket__panel-name">Cesta Pequena</h3>
-        <p class="ul-weekly-basket__panel-count">Contém {{ display_items_p.size }} itens desta semana</p>
+        <p class="ul-weekly-basket__panel-count">Contém {{ items_p.size }} {{ items_p_label }} desta semana</p>
       </div>
 
-      {%- if display_items_p.size > 0 -%}
+      {%- if items_p.size > 0 -%}
         <ul class="ul-weekly-basket__items">
-          {%- for item in display_items_p -%}
-            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item }}</li>
+          {%- for item in items_p -%}
+            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item | escape }}</li>
           {%- endfor -%}
         </ul>
       {%- else -%}
@@ -229,13 +219,13 @@
     >
       <div class="ul-weekly-basket__panel-head">
         <h3 class="ul-weekly-basket__panel-name">Cesta Média</h3>
-        <p class="ul-weekly-basket__panel-count">Contém {{ display_items_m.size }} itens desta semana</p>
+        <p class="ul-weekly-basket__panel-count">Contém {{ items_m.size }} {{ items_m_label }} desta semana</p>
       </div>
 
-      {%- if display_items_m.size > 0 -%}
+      {%- if items_m.size > 0 -%}
         <ul class="ul-weekly-basket__items">
-          {%- for item in display_items_m -%}
-            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item }}</li>
+          {%- for item in items_m -%}
+            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item | escape }}</li>
           {%- endfor -%}
         </ul>
       {%- else -%}
@@ -276,13 +266,13 @@
     >
       <div class="ul-weekly-basket__panel-head">
         <h3 class="ul-weekly-basket__panel-name">Cesta Grande</h3>
-        <p class="ul-weekly-basket__panel-count">Contém {{ display_items_g.size }} itens desta semana</p>
+        <p class="ul-weekly-basket__panel-count">Contém {{ items_g.size }} {{ items_g_label }} desta semana</p>
       </div>
 
-      {%- if display_items_g.size > 0 -%}
+      {%- if items_g.size > 0 -%}
         <ul class="ul-weekly-basket__items">
-          {%- for item in display_items_g -%}
-            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item }}</li>
+          {%- for item in items_g -%}
+            <li>{% render 'ul-icon', name: 'leaf', size: 12, class: 'ul-weekly-basket__item-icon' %}{{ item | escape }}</li>
           {%- endfor -%}
         </ul>
       {%- else -%}
