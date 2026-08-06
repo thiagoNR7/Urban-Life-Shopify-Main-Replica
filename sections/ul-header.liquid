@@ -16,6 +16,16 @@
   assign ul_wa_number = section.settings.whatsapp_number | remove: '+' | remove: ' ' | remove: '-' | remove: '(' | remove: ')'
   assign ul_wa_message = section.settings.whatsapp_message | url_encode
   assign ul_wa_href = 'https://wa.me/' | append: ul_wa_number | append: '?text=' | append: ul_wa_message
+
+  # Link 3 do menu ("Produtores"): usa a URL configurada no editor do tema
+  # quando preenchida; caso contrario, monta o destino temporario da pagina
+  # de produtores (?view=produtores ainda e necessario porque o template
+  # personalizado nao foi atribuido definitivamente a pagina no Admin).
+  assign ul_menu_link_3_href = section.settings.menu_link_3_url
+  if ul_menu_link_3_href == blank
+    assign ul_producers_page_url = pages.produtores.url | default: '/pages/produtores'
+    assign ul_menu_link_3_href = ul_producers_page_url | append: '?view=produtores'
+  endif
 -%}
 
 <ul-header-component class="ul-header" id="UlHeader-{{ section.id }}">
@@ -66,7 +76,7 @@
         <a href="{{ section.settings.menu_link_2_url | default: routes.all_products_collection_url }}" class="ul-header__menu-link">{{ section.settings.menu_link_2_label }}</a>
       </li>
       <li class="ul-header__menu-item">
-        <a href="{{ section.settings.menu_link_3_url | default: '/pages/produtores?view=produtores' }}" class="ul-header__menu-link">{{ section.settings.menu_link_3_label }}</a>
+        <a href="{{ ul_menu_link_3_href }}" class="ul-header__menu-link">{{ section.settings.menu_link_3_label }}</a>
       </li>
       <li class="ul-header__menu-item">
         <a href="{{ section.settings.menu_link_4_url | default: '#como-funciona' }}" class="ul-header__menu-link">{{ section.settings.menu_link_4_label }}</a>
@@ -137,7 +147,7 @@
   >
     <a href="{{ section.settings.menu_link_1_url | default: routes.root_url }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_1_label }}</a>
     <a href="{{ section.settings.menu_link_2_url | default: routes.all_products_collection_url }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_2_label }}</a>
-    <a href="{{ section.settings.menu_link_3_url | default: '/pages/produtores?view=produtores' }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_3_label }}</a>
+    <a href="{{ ul_menu_link_3_href }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_3_label }}</a>
     <a href="{{ section.settings.menu_link_4_url | default: '#como-funciona' }}" class="ul-header__mobile-menu-link">{{ section.settings.menu_link_4_label }}</a>
     <a
       href="{{ ul_wa_href }}"

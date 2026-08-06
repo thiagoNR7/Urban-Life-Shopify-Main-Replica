@@ -14,7 +14,8 @@
     "header_section": {
       "type": "ul-header",
       "settings": {
-        "logo_height": 42
+        "logo_height": 42,
+        "menu_link_3_url": "/pages/produtores?view=produtores"
       }
     }
   },
