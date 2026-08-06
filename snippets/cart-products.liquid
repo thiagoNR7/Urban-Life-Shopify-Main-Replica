@@ -57,6 +57,8 @@
   "
 >
   {% if cart.empty? or force_empty %}
+    <p class="cart-items__empty-text">Escolha uma horta e encontre a cesta ideal para esta semana.</p>
+
     {%- if shop.customer_accounts_enabled and customer == null -%}
       <p>
         {{ 'actions.log_in_html' | t: link: routes.account_login_url }}
@@ -65,10 +67,10 @@
 
     <a
       class="button cart-items__empty-button"
-      href="{{ settings.empty_cart_button_link | default: routes.all_products_collection_url }}"
+      href="{{ pages.produtores.url | default: '/pages/produtores' | append: '?view=produtores' }}"
     >
       <span class="button-text">
-        {{ 'actions.continue_shopping' | t }}
+        Ver produtores
       </span>
     </a>
   {%- else -%}
@@ -209,6 +211,14 @@
                         mode: 'trigger'
                       %}
                     </div>
+                    {%- liquid
+                      assign cart_item_producer = item.product.metafields.custom.produtor.value
+                      assign cart_item_producer_name = cart_item_producer.nome_horta.value | default: cart_item_producer.nome.value
+                    -%}
+                    {%- if cart_item_producer_name != blank -%}
+                      <p class="cart-items__producer">Horta: {{ cart_item_producer_name }}</p>
+                    {%- endif -%}
+
                     {% if item.product.vendor and block_settings.vendor %}
                       <p>
                         {{ item.product.vendor }}
@@ -238,7 +248,7 @@
                         <dl class="cart-items__variants">
                           {%- for option in item.options_with_values -%}
                             <div class="cart-items__variant">
-                              <dt class="visually-hidden">{{ option.name }}:</dt>
+                              <dt>{{ option.name }}:</dt>
                               <dd>
                                 {{- option.value -}}
                                 {%- if forloop.last != true %},&nbsp;{% endif -%}
@@ -638,12 +648,21 @@
     overflow-wrap: break-word;
   }
 
+  .cart-items__producer {
+    color: var(--color-foreground-subdued);
+  }
+
   .cart-items__variants {
     display: block;
   }
 
   .cart-items__variant {
     display: inline;
+  }
+
+  .cart-items__variant dt {
+    color: var(--color-foreground-subdued);
+    font-weight: var(--font-weight-normal);
   }
 
   .cart-items__variant dt,
@@ -724,6 +743,13 @@
     object-position: center center;
     width: 100%;
     height: auto;
+  }
+
+  .cart-items__empty-text {
+    margin: 0;
+    color: var(--color-foreground-subdued);
+    text-align: center;
+    max-width: 32rem;
   }
 
   .cart-items__empty-button {

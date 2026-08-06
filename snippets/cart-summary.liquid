@@ -11,16 +11,16 @@
 <div class="cart-totals">
   {% # We need to keep this node in place to allow morphing to work properly # %}
   <div class="cart-totals__original-container cart-primary-typography">
-    {%- if cart.cart_level_discount_applications.size > 0 -%}
-      <span class="cart-totals__item cart-totals__original">
-        <span class="cart-totals__original-label">{{ 'content.cart_subtotal' | t }}</span>
-        <span
-          class="cart-totals__original-value cart-secondary-typography"
-          data-testid="cart-subtotal-value"
-        >
-          {{- cart.items_subtotal_price | money -}}
-        </span>
+    <span class="cart-totals__item cart-totals__original">
+      <span class="cart-totals__original-label">{{ 'content.cart_subtotal' | t }}</span>
+      <span
+        class="cart-totals__original-value cart-secondary-typography"
+        data-testid="cart-subtotal-value"
+      >
+        {{- cart.items_subtotal_price | money -}}
       </span>
+    </span>
+    {%- if cart.cart_level_discount_applications.size > 0 -%}
       <ul
         class="cart-discounts"
         role="list"
@@ -269,7 +269,7 @@
     form="cart-form"
   >
     <span class="button-text">
-      {{ 'content.checkout' | t }}
+      Continuar para o checkout
     </span>
   </button>
 
@@ -283,6 +283,10 @@
       {{ content_for_additional_checkout_buttons }}
     </div>
   {% endif %}
+
+  <a href="{{ pages.produtores.url | default: '/pages/produtores' | append: '?view=produtores' }}" class="cart-summary__continue-link">
+    Continuar escolhendo cestas
+  </a>
 </div>
 
 {% stylesheet %}
@@ -481,6 +485,21 @@
     width: 100%;
     height: clamp(25px, var(--height-buy-buttons), 55px);
     padding-inline: var(--padding-4xl);
+  }
+
+  .cart-summary__continue-link {
+    display: block;
+    margin-block-start: var(--margin-2xs);
+    color: var(--color-foreground-subdued);
+    font-size: var(--font-size--sm);
+    text-align: center;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration-color: currentColor;
+    }
   }
 
   .cart-drawer__summary .cart-totals:not(:has(.cart-totals__original-container:empty)) {

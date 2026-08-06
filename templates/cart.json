@@ -15,8 +15,9 @@
           "type": "_cart-title",
           "static": true,
           "settings": {
-            "title": "Cart",
-            "show_count": true,
+            "title": "Seu carrinho",
+            "subtitle": "Revise suas cestas antes de continuar.",
+            "show_count": false,
             "type_preset": "h4",
             "alignment": "left",
             "padding-block-start": 0,

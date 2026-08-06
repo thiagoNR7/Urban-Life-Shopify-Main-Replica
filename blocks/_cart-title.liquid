@@ -25,12 +25,25 @@
 >
   <h1 class="{{ block_settings.type_preset | default: 'h2' }}">
     {%- if cart.empty? or force_empty -%}
-      {{ 'content.your_cart_is_empty' | t }}
+      Seu carrinho está vazio
     {%- else -%}
       {{ block_settings.title }}
       {%- if block_settings.show_count -%}{% render 'cart-bubble' %}{%- endif -%}
     {%- endif -%}
   </h1>
+
+  {%- unless cart.empty? or force_empty -%}
+    {%- if block_settings.subtitle != blank -%}
+      <p class="cart-title__subtitle">{{ block_settings.subtitle }}</p>
+    {%- endif -%}
+    <p class="cart-title__count">
+      {%- if cart.item_count == 1 -%}
+        1 item no carrinho
+      {%- else -%}
+        {{ cart.item_count }} itens no carrinho
+      {%- endif -%}
+    </p>
+  {%- endunless -%}
 </div>
 
 {% stylesheet %}
@@ -39,6 +52,18 @@
     display: inline-flex;
     align-items: center;
     gap: var(--gap-sm);
+  }
+
+  .cart-title__subtitle {
+    margin: var(--margin-2xs) 0 0;
+    color: var(--color-foreground-subdued);
+    font-size: var(--font-size--sm);
+  }
+
+  .cart-title__count {
+    margin: var(--margin-3xs) 0 0;
+    color: var(--color-foreground-subdued);
+    font-size: var(--font-size--xs);
   }
 
   .cart-title .cart-bubble {
@@ -77,6 +102,12 @@
       "id": "title",
       "label": "t:settings.cart_title",
       "default": "t:text_defaults.cart"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtítulo",
+      "default": "Revise suas cestas antes de continuar."
     },
     {
       "type": "checkbox",
