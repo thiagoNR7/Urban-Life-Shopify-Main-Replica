@@ -223,7 +223,7 @@
     "pickup_not_available": "Retirada indisponível no momento",
     "pickup_ready_in": "{{ pickup_time }}",
     "taxes_at_checkout_shipping_at_checkout_with_policy_without_discounts_html": "Tributos e <a href=\"{{ link }}\">frete</a> calculados no checkout.",
-    "taxes_at_checkout_shipping_at_checkout_without_policy_without_discounts": "Tributos e frete calculados no checkout.",
+    "taxes_at_checkout_shipping_at_checkout_without_policy_without_discounts": "Frete e demais valores calculados no checkout.",
     "taxes_included_shipping_at_checkout_with_policy_without_discounts_html": "Tributos incluídos. Frete calculado no checkout.",
     "taxes_included_shipping_at_checkout_without_policy_without_discounts": "Tributos incluídos. Frete calculado no checkout.",
     "wrong_password": "Senha incorreta",
