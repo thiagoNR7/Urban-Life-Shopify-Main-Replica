@@ -1,0 +1,107 @@
+{%- comment -%}
+  Hero compacto da vitrine multiprodutor de produtos (Etapa 4 - Urban Life).
+  Usado como primeira section de templates/collection.json (pagina geral de
+  produtos, ex.: /collections/all). Deliberadamente pequeno: badge + H1 +
+  subtitulo, sem carrossel/imagem grande, para os produtos aparecerem o mais
+  rapido possivel na rolagem (ver sections/ul-product-marketplace.liquid logo
+  abaixo dele no template).
+
+  Nao usa closest.collection.title/description (Horizon nativo) de proposito:
+  esta e uma pagina curada ("vitrine"), nao uma collection generica, entao o
+  H1 e o subtitulo sao copy fixa configuravel via schema (mesma convencao de
+  sections/ul-hero.liquid), nao dados de coleção. Este e o UNICO <h1> desta
+  pagina (o template deixa de renderizar o bloco de heading generico do
+  Horizon que existia antes em templates/collection.json).
+{%- endcomment -%}
+
+{{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
+{{ 'ul-base.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign badge_text = section.settings.badge_text
+  assign heading = section.settings.heading
+  assign subheading = section.settings.subheading
+-%}
+
+<section class="ul-marketplace-hero">
+  <div class="ul-container ul-marketplace-hero__inner">
+    {%- if badge_text != blank -%}
+      <span class="ul-badge ul-marketplace-hero__badge">{{ badge_text }}</span>
+    {%- endif -%}
+
+    {%- if heading != blank -%}
+      <h1 class="ul-marketplace-hero__heading">{{ heading }}</h1>
+    {%- endif -%}
+
+    {%- if subheading != blank -%}
+      <p class="ul-marketplace-hero__subheading">{{ subheading }}</p>
+    {%- endif -%}
+  </div>
+</section>
+
+{% stylesheet %}
+  .ul-marketplace-hero {
+    background: var(--ul-color-background);
+    border-bottom: 1px solid var(--ul-color-border);
+  }
+
+  .ul-marketplace-hero__inner {
+    padding-block: 2rem;
+    max-width: 46rem;
+  }
+
+  .ul-marketplace-hero__badge {
+    margin-bottom: 0.875rem;
+  }
+
+  .ul-marketplace-hero__heading {
+    margin: 0 0 0.625rem;
+    font-family: var(--ul-font-family);
+    font-size: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+    font-weight: var(--ul-font-weight-bold);
+    line-height: 1.15;
+    color: var(--ul-color-foreground);
+    letter-spacing: -0.01em;
+  }
+
+  .ul-marketplace-hero__subheading {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--ul-color-muted-foreground);
+    max-width: 38rem;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Hero da Vitrine",
+  "tag": "section",
+  "class": "ul-marketplace-hero-section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "badge_text",
+      "label": "Badge",
+      "default": "🌿 Direto das hortas"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Título (H1 da página)",
+      "default": "Produtos frescos das hortas"
+    },
+    {
+      "type": "textarea",
+      "id": "subheading",
+      "label": "Subtítulo",
+      "default": "Descubra cestas e produtos cultivados e produzidos por hortas urbanas de São Paulo. Escolha de qual horta você quer comprar."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hero da Vitrine"
+    }
+  ]
+}
+{% endschema %}

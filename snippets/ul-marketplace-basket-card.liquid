@@ -1,0 +1,429 @@
+{%- doc -%}
+  Card de cesta (custom.tipo_produto == 'cesta') para a vitrine multiprodutor
+  (Etapa 4 - Urban Life, ver sections/ul-product-marketplace.liquid).
+
+  FONTE DE DADOS (nao inventa nem duplica nada): recebe o mesmo produto
+  "Cesta da Semana" ja resolvido pela section chamadora com a MESMA regra de
+  sections/ul-producer-profile.liquid (custom.selecao_da_semana marcado, senao
+  o primeiro produto tipo 'cesta' encontrado para aquele produtor). A
+  extracao de variante por tamanho (comparando variant.title normalizado com
+  'pequena (p)'/'média (m)'/'media (m)'/'grande (g)') e a leitura de
+  composicao (product.metafields.custom.itens_cesta_p/m/g.value) reaproveitam
+  EXATAMENTE os mesmos campos que snippets/ul-weekly-basket-selector.liquid ja
+  usa na pagina do produtor - esse snippet nao pode ser importado/estendido
+  daqui (e exclusivo da pagina do produtor, com swap/add-to-cart, e a
+  instrucao do projeto foi de nao alterar esse arquivo), entao a leitura das
+  MESMAS variantes/metafields e reescrita aqui de forma somente-leitura
+  (sem swap, sem add-to-cart, sem link para /products). Qualquer alteracao
+  futura nesses metafields/variantes reflete aqui automaticamente, pois nao
+  ha nenhum valor copiado/cacheado - tudo e lido do `product` no momento do
+  render.
+
+  Card 100% clicavel: um link "esticado" (stretched-link) cobre o card
+  inteiro e leva para a pagina do produtor (nunca para /products/*); os
+  chips de tamanho (botoes) ficam numa camada acima (z-index) para
+  continuarem clicaveis sem exigir <button> dentro de <a> (invalido em
+  HTML). Ha tambem um <a> real e focavel (imagem) e outro (CTA "Ver na
+  horta") com o mesmo href, para teclado/leitor de tela.
+
+  @param {object} product - Produto "Cesta da Semana" do produtor (mesma resolucao do perfil do produtor).
+  @param {object} producer - Entrada do metaobject do produtor (product.metafields.custom.produtor.value).
+  @param {string} producer_href - URL publica da pagina do produtor (producer.system.url, com fallback resolvido pela section chamadora).
+
+  @example
+  {% render 'ul-marketplace-basket-card', product: product, producer: producer, producer_href: producer_href %}
+{%- enddoc -%}
+
+{%- liquid
+  assign variant_p = blank
+  assign variant_m = blank
+  assign variant_g = blank
+
+  for variant in product.variants
+    assign normalized_variant_title = variant.title | strip | downcase
+    case normalized_variant_title
+      when 'pequena (p)'
+        assign variant_p = variant
+      when 'média (m)'
+        assign variant_m = variant
+      when 'media (m)'
+        assign variant_m = variant
+      when 'grande (g)'
+        assign variant_g = variant
+    endcase
+  endfor
+-%}
+
+{%- comment -%} Card sem nenhum tamanho configurado ainda: nao renderiza (evita mostrar cesta "quebrada" na vitrine de descoberta). {%- endcomment -%}
+{%- if variant_p == blank and variant_m == blank and variant_g == blank -%}
+  {%- comment -%} nada a fazer {%- endcomment -%}
+{%- else -%}
+  {%- liquid
+    assign items_p = product.metafields.custom.itens_cesta_p.value
+    assign items_m = product.metafields.custom.itens_cesta_m.value
+    assign items_g = product.metafields.custom.itens_cesta_g.value
+
+    assign composition_preview_limit = 6
+
+    assign available_any = false
+    if variant_p.available or variant_m.available or variant_g.available
+      assign available_any = true
+    endif
+
+    assign default_size = blank
+    assign default_variant = blank
+    if variant_p != blank and variant_p.available
+      assign default_size = 'p'
+      assign default_variant = variant_p
+    elsif variant_m != blank and variant_m.available
+      assign default_size = 'm'
+      assign default_variant = variant_m
+    elsif variant_g != blank and variant_g.available
+      assign default_size = 'g'
+      assign default_variant = variant_g
+    elsif variant_p != blank
+      assign default_size = 'p'
+      assign default_variant = variant_p
+    elsif variant_m != blank
+      assign default_size = 'm'
+      assign default_variant = variant_m
+    else
+      assign default_size = 'g'
+      assign default_variant = variant_g
+    endif
+
+    assign producer_name = producer.nome_horta.value | default: producer.nome.value | default: 'Produtor Urban Life'
+    assign producer_bairro = producer.bairro.value
+    assign producer_regiao = producer.regiao.value
+    assign card_title = product.title | default: 'Cesta da Horta'
+    assign card_image = product.featured_image
+
+    assign sizes_present = ''
+    if variant_p != blank
+      assign sizes_present = sizes_present | append: 'p '
+    endif
+    if variant_m != blank
+      assign sizes_present = sizes_present | append: 'm '
+    endif
+    if variant_g != blank
+      assign sizes_present = sizes_present | append: 'g '
+    endif
+  -%}
+
+  <ul-marketplace-basket-card-component
+    class="ul-marketplace-card ul-marketplace-card--basket{% unless available_any %} ul-marketplace-card--sold-out{% endunless %}"
+    ref="cards[]"
+    data-tipo="cesta"
+    data-producer="{{ producer.system.id | append: '' | escape }}"
+    data-available="{{ available_any }}"
+    data-sizes="{{ sizes_present | strip }}"
+    data-price="{{ default_variant.price | default: 0 }}"
+    data-default-size="{{ default_size }}"
+  >
+    <a href="{{ producer_href }}" class="ul-marketplace-card__stretched-link" aria-hidden="true" tabindex="-1"></a>
+
+    <a
+      href="{{ producer_href }}"
+      class="ul-marketplace-card__media"
+      aria-label="{{ card_title | escape }} · {{ producer_name | escape }} · Ver na horta"
+    >
+      {%- if card_image != blank -%}
+        {{
+          card_image
+          | image_url: width: 640
+          | image_tag:
+            alt: card_title,
+            loading: 'lazy',
+            sizes: '(min-width: 1024px) 25vw, (min-width: 640px) 45vw, 92vw',
+            widths: '320, 480, 640',
+            class: 'ul-marketplace-card__image'
+        }}
+      {%- else -%}
+        <span class="ul-marketplace-card__image-fallback">
+          {% render 'ul-icon', name: 'sprout', size: 44 %}
+        </span>
+      {%- endif -%}
+
+      <span class="ul-marketplace-card__media-badges">
+        <span class="ul-marketplace-card__badge">Cesta</span>
+        {%- unless available_any -%}
+          <span class="ul-marketplace-card__badge ul-marketplace-card__badge--sold-out">Esgotado</span>
+        {%- endunless -%}
+      </span>
+    </a>
+
+    <div class="ul-marketplace-card__body">
+      <p class="ul-marketplace-card__producer">
+        {% render 'ul-icon', name: 'leaf', size: 14, class: 'ul-marketplace-card__producer-icon' %}
+        {{ producer_name }}
+      </p>
+
+      {%- if producer_bairro != blank -%}
+        <p class="ul-marketplace-card__location">
+          {% render 'ul-icon', name: 'map-pin', size: 13 %}
+          {{ producer_bairro }}{% if producer_regiao != blank %} · {{ producer_regiao }}{% endif %}
+        </p>
+      {%- endif -%}
+
+      <h3 class="ul-marketplace-card__title">{{ card_title }}</h3>
+
+      <div class="ul-marketplace-card__sizes" role="tablist" aria-label="Tamanho da cesta">
+        {%- if variant_p != blank -%}
+          <button
+            type="button"
+            class="ul-marketplace-card__chip"
+            role="tab"
+            id="UlMarketCardTabP-{{ product.id }}"
+            aria-controls="UlMarketCardPanelP-{{ product.id }}"
+            aria-selected="{% if default_size == 'p' %}true{% else %}false{% endif %}"
+            tabindex="{% if default_size == 'p' %}0{% else %}-1{% endif %}"
+            data-size="p"
+            ref="tabs[]"
+            on:click="/select/p"
+          >P{% unless variant_p.available %} · esgotado{% endunless %}</button>
+        {%- endif -%}
+        {%- if variant_m != blank -%}
+          <button
+            type="button"
+            class="ul-marketplace-card__chip"
+            role="tab"
+            id="UlMarketCardTabM-{{ product.id }}"
+            aria-controls="UlMarketCardPanelM-{{ product.id }}"
+            aria-selected="{% if default_size == 'm' %}true{% else %}false{% endif %}"
+            tabindex="{% if default_size == 'm' %}0{% else %}-1{% endif %}"
+            data-size="m"
+            ref="tabs[]"
+            on:click="/select/m"
+          >M{% unless variant_m.available %} · esgotado{% endunless %}</button>
+        {%- endif -%}
+        {%- if variant_g != blank -%}
+          <button
+            type="button"
+            class="ul-marketplace-card__chip"
+            role="tab"
+            id="UlMarketCardTabG-{{ product.id }}"
+            aria-controls="UlMarketCardPanelG-{{ product.id }}"
+            aria-selected="{% if default_size == 'g' %}true{% else %}false{% endif %}"
+            tabindex="{% if default_size == 'g' %}0{% else %}-1{% endif %}"
+            data-size="g"
+            ref="tabs[]"
+            on:click="/select/g"
+          >G{% unless variant_g.available %} · esgotado{% endunless %}</button>
+        {%- endif -%}
+      </div>
+
+      <div class="ul-marketplace-card__panels">
+        {%- if variant_p != blank -%}
+          <div
+            class="ul-marketplace-card__panel"
+            role="tabpanel"
+            id="UlMarketCardPanelP-{{ product.id }}"
+            aria-labelledby="UlMarketCardTabP-{{ product.id }}"
+            data-size="p"
+            ref="panels[]"
+            {% unless default_size == 'p' %}hidden{% endunless %}
+          >
+            <p class="ul-marketplace-card__panel-label">Cesta Pequena · {{ items_p.size }} {% if items_p.size == 1 %}item{% else %}itens{% endif %}</p>
+            {%- if items_p.size > 0 -%}
+              <ul class="ul-marketplace-card__composition">
+                {%- for item in items_p limit: composition_preview_limit -%}
+                  <li>{{ item | escape }}</li>
+                {%- endfor -%}
+              </ul>
+              {%- if items_p.size > composition_preview_limit -%}
+                <span class="ul-marketplace-card__more">+{{ items_p.size | minus: composition_preview_limit }} itens</span>
+              {%- endif -%}
+            {%- else -%}
+              <p class="ul-marketplace-card__composition-empty">Composição ainda não cadastrada.</p>
+            {%- endif -%}
+            <div class="ul-marketplace-card__price-row">
+              <span class="ul-marketplace-card__price">{{ variant_p.price | money }}</span>
+              {%- if variant_p.available -%}
+                <span class="ul-marketplace-card__availability">Disponível</span>
+              {%- else -%}
+                <span class="ul-marketplace-card__availability ul-marketplace-card__availability--out">Esgotado</span>
+              {%- endif -%}
+            </div>
+          </div>
+        {%- endif -%}
+
+        {%- if variant_m != blank -%}
+          <div
+            class="ul-marketplace-card__panel"
+            role="tabpanel"
+            id="UlMarketCardPanelM-{{ product.id }}"
+            aria-labelledby="UlMarketCardTabM-{{ product.id }}"
+            data-size="m"
+            ref="panels[]"
+            {% unless default_size == 'm' %}hidden{% endunless %}
+          >
+            <p class="ul-marketplace-card__panel-label">Cesta Média · {{ items_m.size }} {% if items_m.size == 1 %}item{% else %}itens{% endif %}</p>
+            {%- if items_m.size > 0 -%}
+              <ul class="ul-marketplace-card__composition">
+                {%- for item in items_m limit: composition_preview_limit -%}
+                  <li>{{ item | escape }}</li>
+                {%- endfor -%}
+              </ul>
+              {%- if items_m.size > composition_preview_limit -%}
+                <span class="ul-marketplace-card__more">+{{ items_m.size | minus: composition_preview_limit }} itens</span>
+              {%- endif -%}
+            {%- else -%}
+              <p class="ul-marketplace-card__composition-empty">Composição ainda não cadastrada.</p>
+            {%- endif -%}
+            <div class="ul-marketplace-card__price-row">
+              <span class="ul-marketplace-card__price">{{ variant_m.price | money }}</span>
+              {%- if variant_m.available -%}
+                <span class="ul-marketplace-card__availability">Disponível</span>
+              {%- else -%}
+                <span class="ul-marketplace-card__availability ul-marketplace-card__availability--out">Esgotado</span>
+              {%- endif -%}
+            </div>
+          </div>
+        {%- endif -%}
+
+        {%- if variant_g != blank -%}
+          <div
+            class="ul-marketplace-card__panel"
+            role="tabpanel"
+            id="UlMarketCardPanelG-{{ product.id }}"
+            aria-labelledby="UlMarketCardTabG-{{ product.id }}"
+            data-size="g"
+            ref="panels[]"
+            {% unless default_size == 'g' %}hidden{% endunless %}
+          >
+            <p class="ul-marketplace-card__panel-label">Cesta Grande · {{ items_g.size }} {% if items_g.size == 1 %}item{% else %}itens{% endif %}</p>
+            {%- if items_g.size > 0 -%}
+              <ul class="ul-marketplace-card__composition">
+                {%- for item in items_g limit: composition_preview_limit -%}
+                  <li>{{ item | escape }}</li>
+                {%- endfor -%}
+              </ul>
+              {%- if items_g.size > composition_preview_limit -%}
+                <span class="ul-marketplace-card__more">+{{ items_g.size | minus: composition_preview_limit }} itens</span>
+              {%- endif -%}
+            {%- else -%}
+              <p class="ul-marketplace-card__composition-empty">Composição ainda não cadastrada.</p>
+            {%- endif -%}
+            <div class="ul-marketplace-card__price-row">
+              <span class="ul-marketplace-card__price">{{ variant_g.price | money }}</span>
+              {%- if variant_g.available -%}
+                <span class="ul-marketplace-card__availability">Disponível</span>
+              {%- else -%}
+                <span class="ul-marketplace-card__availability ul-marketplace-card__availability--out">Esgotado</span>
+              {%- endif -%}
+            </div>
+          </div>
+        {%- endif -%}
+      </div>
+
+      <a href="{{ producer_href }}" class="ul-btn ul-btn--solid ul-marketplace-card__cta">
+        Ver na horta
+        {% render 'ul-icon', name: 'arrow-right', size: 15 %}
+      </a>
+    </div>
+  </ul-marketplace-basket-card-component>
+{%- endif -%}
+
+{% comment %}
+  Estilos base do card (.ul-marketplace-card, media, badges, corpo, preco,
+  CTA) ficam em sections/ul-product-marketplace.liquid, nao aqui - essa
+  section e a UNICA garantida de sempre renderizar nesta pagina, enquanto
+  este snippet (cesta) pode nao aparecer se, num cenario extremo, nenhum
+  produtor tiver cesta configurada. snippets/ul-marketplace-product-card.liquid
+  reaproveita as MESMAS classes base, entao duplicar esse bloco aqui
+  arriscaria os dois arquivos divergirem estilisticamente com o tempo.
+{% endcomment %}
+{% stylesheet %}
+  .ul-marketplace-card__sizes {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .ul-marketplace-card__chip {
+    min-width: 44px;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-background);
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-semibold);
+    cursor: pointer;
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+  }
+
+  .ul-marketplace-card__chip[aria-selected='true'] {
+    background: var(--ul-color-primary);
+    border-color: var(--ul-color-primary);
+    color: var(--ul-color-primary-foreground);
+  }
+
+  .ul-marketplace-card__chip:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+  }
+
+  .ul-marketplace-card__panels {
+    margin-top: 10px;
+  }
+
+  .ul-marketplace-card__panel-label {
+    margin: 0 0 6px;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-medium);
+  }
+
+  .ul-marketplace-card__composition {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 10px;
+    row-gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ul-marketplace-card__composition li {
+    overflow: hidden;
+    color: var(--ul-color-foreground);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ul-marketplace-card__composition li::before {
+    content: '🌿 ';
+  }
+
+  .ul-marketplace-card__composition-empty {
+    margin: 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.8125rem;
+    font-style: italic;
+  }
+
+  .ul-marketplace-card__more {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--ul-color-primary);
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-semibold);
+  }
+
+  .ul-marketplace-card__panels .ul-marketplace-card__price-row {
+    margin-top: 12px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ul-marketplace-card__chip {
+      transition: none;
+    }
+  }
+{% endstylesheet %}

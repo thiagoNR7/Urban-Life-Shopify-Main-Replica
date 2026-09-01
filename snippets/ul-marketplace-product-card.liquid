@@ -1,0 +1,103 @@
+{%- doc -%}
+  Card de produto especial (custom.tipo_produto == 'produto_especial') para a
+  vitrine multiprodutor (Etapa 4 - Urban Life, ver
+  sections/ul-product-marketplace.liquid). Similar em espirito a
+  snippets/ul-producer-product-card.liquid (usado dentro da propria pagina do
+  produtor), mas com 2 diferencas deliberadas exigidas pela regra comercial
+  "1 pedido = 1 produtor":
+  1. o destino do clique (imagem/titulo/card/CTA) e SEMPRE a pagina do
+     produtor (producer_href), nunca /products/{handle} - a vitrine geral e
+     descoberta, a compra acontece na pagina da horta;
+  2. mostra a identidade do produtor (nome da horta + bairro/regiao) no
+     proprio card, algo que a pagina do produtor nao precisa repetir porque
+     ja esta dentro do contexto daquele produtor.
+  Nao cria nenhum dado novo: usa os mesmos `product.title`, `product.price`,
+  `product.available`, `product.featured_image` que o card da pagina do
+  produtor ja usa.
+
+  @param {object} product - Produto com custom.tipo_produto == 'produto_especial'.
+  @param {object} producer - Entrada do metaobject do produtor (product.metafields.custom.produtor.value).
+  @param {string} producer_href - URL publica da pagina do produtor.
+
+  @example
+  {% render 'ul-marketplace-product-card', product: product, producer: producer, producer_href: producer_href %}
+{%- enddoc -%}
+
+{%- liquid
+  assign producer_name = producer.nome_horta.value | default: producer.nome.value | default: 'Produtor Urban Life'
+  assign producer_bairro = producer.bairro.value
+  assign producer_regiao = producer.regiao.value
+  assign product_image = product.featured_image
+-%}
+
+<article
+  class="ul-marketplace-card ul-marketplace-card--product{% unless product.available %} ul-marketplace-card--sold-out{% endunless %}"
+  ref="cards[]"
+  data-tipo="produto_especial"
+  data-producer="{{ producer.system.id | append: '' | escape }}"
+  data-available="{{ product.available }}"
+  data-sizes=""
+  data-price="{{ product.price | default: 0 }}"
+>
+  <a href="{{ producer_href }}" class="ul-marketplace-card__stretched-link" aria-hidden="true" tabindex="-1"></a>
+
+  <a
+    href="{{ producer_href }}"
+    class="ul-marketplace-card__media"
+    aria-label="{{ product.title | escape }} · {{ producer_name | escape }} · Ver na horta"
+  >
+    {%- if product_image != blank -%}
+      {{
+        product_image
+        | image_url: width: 640
+        | image_tag:
+          alt: product.title,
+          loading: 'lazy',
+          sizes: '(min-width: 1024px) 25vw, (min-width: 640px) 45vw, 92vw',
+          widths: '320, 480, 640',
+          class: 'ul-marketplace-card__image'
+      }}
+    {%- else -%}
+      <span class="ul-marketplace-card__image-fallback">
+        {% render 'ul-icon', name: 'sprout', size: 44 %}
+      </span>
+    {%- endif -%}
+
+    <span class="ul-marketplace-card__media-badges">
+      <span class="ul-marketplace-card__badge">Produto da Horta</span>
+      {%- unless product.available -%}
+        <span class="ul-marketplace-card__badge ul-marketplace-card__badge--sold-out">Esgotado</span>
+      {%- endunless -%}
+    </span>
+  </a>
+
+  <div class="ul-marketplace-card__body">
+    <p class="ul-marketplace-card__producer">
+      {% render 'ul-icon', name: 'leaf', size: 14, class: 'ul-marketplace-card__producer-icon' %}
+      {{ producer_name }}
+    </p>
+
+    {%- if producer_bairro != blank -%}
+      <p class="ul-marketplace-card__location">
+        {% render 'ul-icon', name: 'map-pin', size: 13 %}
+        {{ producer_bairro }}{% if producer_regiao != blank %} · {{ producer_regiao }}{% endif %}
+      </p>
+    {%- endif -%}
+
+    <h3 class="ul-marketplace-card__title">{{ product.title }}</h3>
+
+    <div class="ul-marketplace-card__price-row ul-marketplace-card__price-row--product">
+      <span class="ul-marketplace-card__price">{{ product.price | money }}</span>
+      {%- if product.available -%}
+        <span class="ul-marketplace-card__availability">Disponível</span>
+      {%- else -%}
+        <span class="ul-marketplace-card__availability ul-marketplace-card__availability--out">Esgotado</span>
+      {%- endif -%}
+    </div>
+
+    <a href="{{ producer_href }}" class="ul-btn ul-btn--solid ul-marketplace-card__cta">
+      Ver na horta
+      {% render 'ul-icon', name: 'arrow-right', size: 15 %}
+    </a>
+  </div>
+</article>

@@ -1,0 +1,741 @@
+{%- comment -%}
+  Vitrine multiprodutor da pagina geral de produtos (Etapa 4 - Urban Life).
+  Substitui, em templates/collection.json, o "main-collection" generico do
+  Horizon (grid nativo + filtros/facets do Shopify) por uma grade curada:
+  cestas e produtos especiais de TODOS os produtores, cada card levando
+  sempre para a pagina do PRODUTOR responsavel (nunca para /products/*),
+  reforcando a regra comercial "1 pedido = 1 produtor".
+
+  POR QUE NAO USAR OS FILTROS NATIVOS DO HORIZON (content_for 'block', type:
+  'filters', ja usado em sections/main-collection.liquid): esses filtros
+  dependem de facets configurados em Configuracoes > Busca e descoberta no
+  Admin (fora do tema, nao versionado neste repositorio) para expor
+  custom.produtor/custom.tipo_produto/opcao "Tamanho" como filtros - nao ha
+  como confirmar nem garantir essa configuracao a partir do codigo, e a
+  tarefa pede para nao inventar nem depender de configuracao de backend nao
+  verificavel. Por isso os filtros aqui (categoria, produtor, tamanho,
+  disponibilidade, ordenacao) sao 100% client-side (assets/ul-marketplace.js),
+  sobre os cards ja renderizados no servidor - mesmo padrao ja usado em
+  sections/ul-producer-directory.liquid + assets/ul-producers.js.
+
+  FONTE DE DADOS / COMO PRODUTO -> PRODUTOR E RESOLVIDO: identico ao usado em
+  sections/ul-producer-profile.liquid e snippets/cart-products.liquid -
+  `product.metafields.custom.produtor.value` (referencia ao metaobject do
+  produtor). Produto sem esse metafield preenchido NUNCA aparece aqui (isso,
+  sozinho, ja exclui produtos de demonstracao/sample do Shopify sem precisar
+  filtrar por nome/tag - ver instrucao do pedido sobre nao usar "[TESTE]" ou
+  palavras magicas). `custom.tipo_produto` classifica cada produto em
+  'cesta' ou 'produto_especial'; sem esse metafield, cai no fallback 'cesta'
+  (mesmo comportamento conservador ja usado na pagina do produtor).
+
+  COMO A COMPOSICAO P/M/G E OBTIDA (sem 2a fonte de dados, sem duplicar
+  cadastro): dentro de cada grupo de produtor, o mesmo produto "Cesta da
+  Semana" e resolvido com a MESMA prioridade da pagina do produtor
+  (custom.selecao_da_semana marcado, senao o primeiro produto tipo 'cesta'
+  encontrado) e passado pronto para snippets/ul-marketplace-basket-card.liquid,
+  que le a composicao direto de
+  product.metafields.custom.itens_cesta_p/m/g.value - o MESMO metafield que
+  ul-weekly-basket-selector.liquid usa na pagina do produtor. Nao existe
+  nenhum metafield novo nem cache: qualquer alteracao na composicao
+  cadastrada no Admin aparece aqui e na pagina do produtor ao mesmo tempo.
+
+  LIMITE TECNICO A DECLARAR (Liquid, nao arquitetura de dados): `paginate`
+  limita a leitura de `collection.products` a no maximo 250 itens por
+  carregamento (teto do proprio Liquid/Shopify). Para nao quebrar o
+  agrupamento por produtor (que precisa examinar todos os produtos da
+  colecao para achar a cesta certa e todos os especiais de cada produtor),
+  esta section NAO usa paginacao/scroll infinito como o main-collection
+  fazia - ela le ate 250 produtos de uma vez. Isso cobre folgadamente o
+  catalogo atual da Urban Life; se um dia a colecao "Todos os produtos"
+  ultrapassar 250 produtos cadastrados, os excedentes deixam de aparecer
+  nesta vitrine (nenhum dado errado ou inventado - apenas um teto do
+  Liquid). Ver mensagem final da tarefa para essa observacao.
+
+  AGRUPAMENTO (2 passadas sobre collection.products, ambas O(n) e baratas
+  para o tamanho de catalogo esperado):
+  1) uma passada coleta os `system.id` unicos de produtor (mesmo campo que
+     sections/ul-producer-profile.liquid ja usa pra comparar produto->produtor),
+     na ordem em que aparecem pela primeira vez entre os produtos (mesmo
+     padrao de `| append | split | uniq` ja usado em
+     sections/ul-producer-directory.liquid para bairros/cultivos);
+  2) para cada `system.id` unico, uma passada (igual a de
+     sections/ul-producer-profile.liquid) resolve o objeto do produtor, a
+     cesta da semana e captura o markup de cada produto especial.
+  Isso evita comparar metaobjects diretamente com `uniq` (que nao deduplica
+  de forma confiavel objetos de metaobject) sem inventar nenhuma estrutura
+  de dado nova. IMPORTANTE: usa `system.id`, nao `handle` - ver comentario
+  de correcao mais abaixo, logo apos o `paginate`.
+{%- endcomment -%}
+
+{{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
+{{ 'ul-base.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'ul-marketplace.js' | asset_url }}" type="module"></script>
+
+{%- comment -%}
+  paginate by 250 (teto maximo do Liquid) em vez do padrao implicito de 50,
+  para o agrupamento por produtor abaixo enxergar o catalogo inteiro em uma
+  unica passada - ver comentario tecnico completo no topo deste arquivo.
+{%- endcomment -%}
+{%- paginate collection.products by 250 -%}
+{%- comment -%}
+  CORRECAO (bug "0 produtos encontrados"): a chave de agrupamento por
+  produtor usava `ref_producer.handle`, o UNICO lugar do projeto que lia
+  `.handle` de um metaobject resolvido via
+  `product.metafields.custom.produtor.value` (uma referencia de metafield) -
+  esse caminho de leitura nunca foi validado em nenhum outro arquivo. O
+  unico caminho comprovado, usado em sections/ul-producer-profile.liquid,
+  compara `referenced_producer.system.id == producer.system.id`. Trocado
+  abaixo para `ref_producer.system.id`, exatamente o mesmo campo/caminho ja
+  validado, para nao ter 2 interpretacoes diferentes de produto -> produtor.
+{%- endcomment -%}
+{%- liquid
+  assign producer_ids_raw = ''
+  for product in collection.products
+    assign ref_producer = product.metafields.custom.produtor.value
+    if ref_producer != blank
+      assign producer_ids_raw = producer_ids_raw | append: ref_producer.system.id | append: '::'
+    endif
+  endfor
+  assign producer_ids = producer_ids_raw | split: '::' | uniq
+
+  assign producer_options_markup = ''
+  assign rendered_card_count = 0
+-%}
+
+{%- comment -%}
+  DEBUG TEMPORARIO (remover apos confirmar a correcao) - 1 comentario HTML
+  por produto de collection.products, sem tokens/credenciais/dados de
+  cliente. Ver <!-- URBANLIFE-DEBUG ... --> no HTML renderizado.
+{%- endcomment -%}
+<!-- URBANLIFE-DEBUG: paginate.products.size={{ paginate.items }} collection.products.size={{ collection.products.size }} producer_ids_found={{ producer_ids.size }} -->
+{%- for product in collection.products -%}
+  {%- liquid
+    assign debug_ref_producer = product.metafields.custom.produtor.value
+    assign debug_has_produtor = false
+    assign debug_elegivel = false
+    if debug_ref_producer != blank
+      assign debug_has_produtor = true
+      if debug_ref_producer.system.id != blank
+        assign debug_elegivel = true
+      endif
+    endif
+  -%}
+  <!-- URBANLIFE-DEBUG produto="{{ product.title | escape }}" custom.produtor_existe={{ debug_has_produtor }} producer.system.id="{{ debug_ref_producer.system.id }}" producer.handle="{{ debug_ref_producer.handle }}" custom.tipo_produto="{{ product.metafields.custom.tipo_produto.value }}" producer.system.url="{{ debug_ref_producer.system.url }}" elegivel={{ debug_elegivel }} -->
+{%- endfor -%}
+
+{%- capture grid_markup -%}
+  {%- for producer_id in producer_ids -%}
+    {%- liquid
+      assign producer = blank
+      assign producer_href = '#'
+      assign weekly_product = blank
+      assign fallback_product = blank
+    -%}
+
+    {%- capture special_cards_markup -%}
+      {%- for product in collection.products -%}
+        {%- liquid
+          assign ref_producer = product.metafields.custom.produtor.value
+          assign ref_producer_id_str = ref_producer.system.id | append: ''
+        -%}
+        {%- if ref_producer != blank and ref_producer_id_str == producer_id -%}
+          {%- liquid
+            assign producer = ref_producer
+            assign producer_href = producer.system.url | default: pages.produtores.url | default: '#'
+            assign product_type = product.metafields.custom.tipo_produto.value | default: 'cesta'
+          -%}
+
+          {%- if product_type == 'produto_especial' -%}
+            {% render 'ul-marketplace-product-card', product: product, producer: producer, producer_href: producer_href %}
+            {%- liquid assign rendered_card_count = rendered_card_count | plus: 1 -%}
+          {%- else -%}
+            {%- liquid
+              if fallback_product == blank
+                assign fallback_product = product
+              endif
+              if weekly_product == blank and product.metafields.custom.selecao_da_semana.value == true
+                assign weekly_product = product
+              endif
+            -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endcapture -%}
+
+    {%- if weekly_product == blank -%}
+      {%- assign weekly_product = fallback_product -%}
+    {%- endif -%}
+
+    {%- liquid
+      assign producer_display_name = producer.nome_horta.value | default: producer.nome.value | default: 'Produtor Urban Life'
+      assign producer_id_safe = producer_id | escape
+      assign producer_display_name_safe = producer_display_name | escape
+      assign producer_options_markup = producer_options_markup | append: '<option value="' | append: producer_id_safe | append: '">' | append: producer_display_name_safe | append: '</option>'
+    -%}
+
+    {%- if weekly_product != blank -%}
+      {% render 'ul-marketplace-basket-card', product: weekly_product, producer: producer, producer_href: producer_href %}
+      {%- comment -%} O snippet acima pode nao renderizar nada (cesta sem nenhuma variante P/M/G configurada) - so soma ao contador quando isso nao acontece. {%- endcomment -%}
+      {%- if weekly_product.variants.size > 0 -%}
+        {%- assign rendered_card_count = rendered_card_count | plus: 1 -%}
+      {%- endif -%}
+    {%- endif -%}
+
+    {{ special_cards_markup }}
+  {%- endfor -%}
+{%- endcapture -%}
+{%- endpaginate -%}
+
+<section class="ul-marketplace-section">
+  <div class="ul-container">
+    <ul-marketplace-grid-component class="ul-marketplace" id="UlMarketplace-{{ section.id }}">
+      <div class="ul-marketplace-toolbar">
+        <div class="ul-marketplace-toolbar__categories" role="group" aria-label="Categoria de produto">
+          <button type="button" class="ul-marketplace-chip" ref="tipoChips[]" data-tipo-filter="all" aria-pressed="true" on:click="/setTipo/all">Todos</button>
+          <button type="button" class="ul-marketplace-chip" ref="tipoChips[]" data-tipo-filter="cesta" aria-pressed="false" on:click="/setTipo/cesta">Cestas</button>
+          <button type="button" class="ul-marketplace-chip" ref="tipoChips[]" data-tipo-filter="produto_especial" aria-pressed="false" on:click="/setTipo/produto_especial">Produtos da Horta</button>
+        </div>
+
+        <div class="ul-marketplace-toolbar__actions">
+          <button
+            type="button"
+            class="ul-btn ul-btn--outline ul-btn--sm ul-marketplace-toolbar__filters-btn"
+            ref="filtersToggle"
+            on:click="/openDrawer"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="UlMarketplaceDrawer-{{ section.id }}"
+          >
+            Filtros
+          </button>
+
+          <label class="ul-marketplace-sort">
+            <span class="visually-hidden">Ordenar por</span>
+            <select ref="sortSelect" class="ul-marketplace-sort__select" on:change="/onSortChange">
+              <option value="relevance">Ordenar: Relevância</option>
+              <option value="price-asc">Ordenar: Menor preço</option>
+              <option value="price-desc">Ordenar: Maior preço</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <p class="ul-marketplace-count" ref="counter" aria-live="polite">
+        {%- if rendered_card_count == 1 -%}1 produto encontrado{%- else -%}{{ rendered_card_count }} produtos encontrados{%- endif -%}
+      </p>
+
+      {%- comment -%}
+        Usa rendered_card_count (nao producer_ids.size) porque e o numero
+        real de cards que o Liquid efetivamente renderizou - um producer_id
+        pode existir sem gerar nenhum card (ex.: cesta sem nenhuma variante
+        P/M/G configurada, ver snippets/ul-marketplace-basket-card.liquid),
+        entao so ele reflete com precisao se ha algo pra mostrar.
+      {%- endcomment -%}
+      {%- if rendered_card_count > 0 -%}
+        <div class="ul-marketplace-grid">
+          {{ grid_markup }}
+        </div>
+      {%- endif -%}
+
+      <p class="ul-marketplace-empty" ref="emptyState" {% if rendered_card_count > 0 %}hidden{% endif %}>
+        Nenhum produto disponível na vitrine no momento.
+      </p>
+
+      <div class="ul-marketplace-drawer" id="UlMarketplaceDrawer-{{ section.id }}" ref="drawer" hidden on:keydown="/onDrawerKeydown">
+        <div class="ul-marketplace-drawer__backdrop" on:click="/closeDrawer"></div>
+        <div class="ul-marketplace-drawer__panel" role="dialog" aria-modal="true" aria-label="Filtros">
+          <div class="ul-marketplace-drawer__header">
+            <h2 class="ul-marketplace-drawer__title">Filtros</h2>
+            <button type="button" class="ul-marketplace-drawer__close" data-drawer-close on:click="/closeDrawer" aria-label="Fechar filtros">
+              {% render 'ul-icon', name: 'close', size: 20 %}
+            </button>
+          </div>
+
+          <div class="ul-marketplace-drawer__body">
+            <div class="ul-marketplace-filter-group">
+              <span class="ul-marketplace-filter-group__label">Produtor / Horta</span>
+              <select ref="producerSelect" class="ul-marketplace-filter-group__select" on:change="/onProducerChange">
+                <option value="">Todas as hortas</option>
+                {{ producer_options_markup }}
+              </select>
+            </div>
+
+            <div class="ul-marketplace-filter-group">
+              <span class="ul-marketplace-filter-group__label">Tamanho da cesta</span>
+              <div class="ul-marketplace-toolbar__categories" role="group" aria-label="Tamanho da cesta">
+                <button type="button" class="ul-marketplace-chip" ref="sizeChips[]" data-size-filter="" aria-pressed="true" on:click="/clearSizeFilter">Todos</button>
+                <button type="button" class="ul-marketplace-chip" ref="sizeChips[]" data-size-filter="p" aria-pressed="false" on:click="/setSize/p">P</button>
+                <button type="button" class="ul-marketplace-chip" ref="sizeChips[]" data-size-filter="m" aria-pressed="false" on:click="/setSize/m">M</button>
+                <button type="button" class="ul-marketplace-chip" ref="sizeChips[]" data-size-filter="g" aria-pressed="false" on:click="/setSize/g">G</button>
+              </div>
+            </div>
+
+            <label class="ul-marketplace-filter-group__checkbox">
+              <input type="checkbox" ref="availabilityCheckbox" on:change="/onAvailabilityChange">
+              Somente disponíveis
+            </label>
+
+            <button type="button" class="ul-btn ul-btn--outline ul-btn--sm" on:click="/clearFilters">Limpar filtros</button>
+          </div>
+        </div>
+      </div>
+    </ul-marketplace-grid-component>
+  </div>
+</section>
+
+{% stylesheet %}
+  /* Cartao base, compartilhado por snippets/ul-marketplace-basket-card.liquid
+     e snippets/ul-marketplace-product-card.liquid (ver comentario no topo
+     desses arquivos sobre por que essas regras vivem aqui). */
+  .ul-marketplace-card {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background: var(--ul-color-white);
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-card);
+    box-shadow: var(--ul-shadow-card-sm);
+    overflow: hidden;
+    font-family: var(--ul-font-family);
+    transition: box-shadow 200ms ease, transform 200ms ease;
+  }
+
+  .ul-marketplace-card:hover,
+  .ul-marketplace-card:focus-within {
+    box-shadow: var(--ul-shadow-card-md-hover);
+    transform: translateY(-3px);
+  }
+
+  .ul-marketplace-card__stretched-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .ul-marketplace-card__media {
+    position: relative;
+    z-index: 0;
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--ul-color-secondary);
+  }
+
+  .ul-marketplace-card--sold-out .ul-marketplace-card__media {
+    opacity: 0.6;
+  }
+
+  .ul-marketplace-card__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ul-marketplace-card__image-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--ul-color-olive-light);
+  }
+
+  .ul-marketplace-card__media-badges {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .ul-marketplace-card__badge {
+    padding: 4px 12px;
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-white);
+    color: var(--ul-color-primary);
+    font-size: 0.6875rem;
+    font-weight: var(--ul-font-weight-semibold);
+    letter-spacing: 0.02em;
+    box-shadow: var(--ul-shadow-card-sm);
+  }
+
+  .ul-marketplace-card__badge--sold-out {
+    background: var(--ul-color-foreground);
+    color: var(--ul-color-background);
+  }
+
+  .ul-marketplace-card__body {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+    padding: 1.125rem 1.25rem 1.25rem;
+  }
+
+  .ul-marketplace-card__producer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--ul-color-primary);
+    font-size: 0.8125rem;
+    font-weight: var(--ul-font-weight-semibold);
+  }
+
+  .ul-marketplace-card__producer-icon {
+    flex-shrink: 0;
+  }
+
+  .ul-marketplace-card__location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.75rem;
+  }
+
+  .ul-marketplace-card__title {
+    margin: 4px 0 2px;
+    font-size: 1.0625rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+    line-height: 1.3;
+  }
+
+  .ul-marketplace-card__price-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .ul-marketplace-card__price-row--product {
+    margin-top: 10px;
+  }
+
+  .ul-marketplace-card__price {
+    font-size: 1.25rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .ul-marketplace-card__availability {
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-medium);
+    color: var(--ul-color-olive-light);
+  }
+
+  .ul-marketplace-card__availability--out {
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-marketplace-card__cta {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    /* margin-top: auto (em vez de um valor fixo) pinos o CTA no rodape do
+       card mesmo quando a composicao/titulo tem alturas diferentes entre
+       produtores - o espacamento minimo ja vem do gap do flex column pai
+       (.ul-marketplace-card__body). */
+    margin-top: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ul-marketplace-card {
+      transition: none;
+    }
+  }
+
+  /* Section/toolbar/grid */
+  .ul-marketplace-section {
+    background: var(--ul-color-page-gray);
+    padding-block: 1.5rem 4rem;
+  }
+
+  .ul-marketplace-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .ul-marketplace-toolbar__categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ul-marketplace-chip {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-white);
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.8125rem;
+    font-weight: var(--ul-font-weight-semibold);
+    cursor: pointer;
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+  }
+
+  .ul-marketplace-chip[aria-pressed='true'] {
+    background: var(--ul-color-primary);
+    border-color: var(--ul-color-primary);
+    color: var(--ul-color-primary-foreground);
+  }
+
+  .ul-marketplace-chip:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+  }
+
+  .ul-marketplace-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ul-marketplace-toolbar__filters-btn {
+    display: none;
+  }
+
+  .ul-marketplace-sort__select {
+    height: 40px;
+    padding-inline: 14px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-white);
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .ul-marketplace-count {
+    margin: 0 0 1.25rem;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.875rem;
+  }
+
+  .ul-marketplace-empty {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.9375rem;
+  }
+
+  .ul-marketplace-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ul-space-grid-gap-sm);
+  }
+
+  @media (min-width: 640px) {
+    .ul-marketplace-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ul-marketplace-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (min-width: 1400px) {
+    .ul-marketplace-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  /* Filtros: em telas >= 900px, o grupo "Produtor/Tamanho/Disponibilidade"
+     fica sempre visivel ao lado das categorias (sem precisar do drawer);
+     abaixo disso, viram um drawer mobile acionado pelo botao "Filtros". */
+  .ul-marketplace-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ul-z-modal);
+  }
+
+  .ul-marketplace-drawer[hidden] {
+    display: none;
+  }
+
+  .ul-marketplace-drawer__backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--ul-color-modal-overlay);
+  }
+
+  .ul-marketplace-drawer__panel {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-height: 85vh;
+    padding: 1.25rem 1.25rem 1.5rem;
+    overflow-y: auto;
+    background: var(--ul-color-background);
+    border-radius: var(--ul-radius-lg) var(--ul-radius-lg) 0 0;
+    box-shadow: var(--ul-shadow-carousel);
+  }
+
+  .ul-marketplace-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ul-marketplace-drawer__title {
+    margin: 0;
+    font-family: var(--ul-font-family);
+    font-size: 1.0625rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-marketplace-drawer__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: var(--ul-radius-pill);
+    background: var(--ul-color-secondary);
+    color: var(--ul-color-foreground);
+    cursor: pointer;
+  }
+
+  .ul-marketplace-drawer__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .ul-marketplace-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ul-marketplace-filter-group__label {
+    font-size: 0.8125rem;
+    font-weight: var(--ul-font-weight-semibold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-marketplace-filter-group__select {
+    height: 44px;
+    padding-inline: 14px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-base);
+    background: var(--ul-color-white);
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.875rem;
+  }
+
+  .ul-marketplace-filter-group__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--ul-color-foreground);
+    cursor: pointer;
+  }
+
+  .ul-marketplace-filter-group__checkbox input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ul-color-primary);
+  }
+
+  @media (min-width: 900px) {
+    .ul-marketplace-toolbar__filters-btn {
+      display: none;
+    }
+
+    .ul-marketplace-drawer {
+      position: static;
+      z-index: auto;
+    }
+
+    .ul-marketplace-drawer[hidden] {
+      display: block;
+    }
+
+    .ul-marketplace-drawer__backdrop {
+      display: none;
+    }
+
+    .ul-marketplace-drawer__panel {
+      position: static;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      max-height: none;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      border-radius: var(--ul-radius-lg);
+      box-shadow: none;
+      border: 1px solid var(--ul-color-border);
+      background: var(--ul-color-white);
+    }
+
+    .ul-marketplace-drawer__header {
+      display: none;
+    }
+
+    .ul-marketplace-drawer__body {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 1.5rem;
+    }
+  }
+
+  @media (max-width: 899.98px) {
+    .ul-marketplace-toolbar__filters-btn {
+      display: inline-flex;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ul-marketplace-chip {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Vitrine multiprodutor",
+  "tag": "section",
+  "class": "ul-product-marketplace-section",
+  "enabled_on": {
+    "templates": ["collection"]
+  },
+  "settings": [],
+  "presets": [
+    {
+      "name": "Vitrine multiprodutor"
+    }
+  ]
+}
+{% endschema %}
