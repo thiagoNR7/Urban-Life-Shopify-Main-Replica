@@ -84,6 +84,18 @@
     </ul>
 
     <div class="ul-header__actions">
+      {%- if shop.customer_accounts_enabled -%}
+        <div class="ul-header__account">
+          <shopify-account menu="customer-account-main-menu">
+            {%- unless customer -%}
+              <span slot="signed-out-avatar" class="ul-header__account-icon" aria-hidden="true">
+                {% render 'ul-icon', name: 'user', size: 20 %}
+              </span>
+            {%- endunless -%}
+          </shopify-account>
+        </div>
+      {%- endif -%}
+
       <a
         href="{{ routes.cart_url }}"
         class="ul-header__cart-link"
@@ -319,6 +331,41 @@
     .ul-header__producer-cta {
       display: none;
     }
+  }
+
+  .ul-header__account {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  shopify-account {
+    --shopify-account-font-heading: var(--ul-font-family);
+    --shopify-account-font-heading-weight: var(--ul-font-weight-bold);
+    --shopify-account-font-body: var(--ul-font-family);
+    --shopify-account-font-body-weight: var(--ul-font-weight-regular);
+    --shopify-account-radius-base: var(--ul-radius-lg);
+    --shopify-account-radius-button: var(--ul-radius-pill);
+    --shopify-account-radius-button-small: var(--ul-radius-pill);
+    --shopify-account-radius-input: var(--ul-radius-base);
+    --shopify-account-color-background: var(--ul-color-white);
+    --shopify-account-color-text: var(--ul-color-foreground);
+    --shopify-account-color-accent: var(--ul-color-primary);
+    --shopify-account-color-accent-text: var(--ul-color-primary-foreground);
+    color: var(--ul-color-white);
+  }
+
+  shopify-account:not(:defined) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+  }
+
+  .ul-header__account-icon {
+    display: inline-flex;
   }
 
   .ul-header__cart-link {

@@ -15,18 +15,26 @@
         {%- liquid
           assign ul_neighborhoods = block.settings.neighborhoods | split: ','
           assign ul_delay = forloop.index | modulo: 4 | plus: 1
+          assign ul_is_available = block.settings.available
         -%}
-        <div class="ul-regions__card ul-reveal ul-reveal-delay-{{ ul_delay }}" {{ block.shopify_attributes }}>
+        <div class="ul-regions__card ul-reveal ul-reveal-delay-{{ ul_delay }}{% unless ul_is_available %} ul-regions__card--locked{% endunless %}" {{ block.shopify_attributes }}>
           <div class="ul-regions__card-head">
             <div>
               <p class="ul-regions__card-eyebrow">Cluster regional</p>
               <h3 class="ul-regions__zone">{{ block.settings.zone }}</h3>
               <p class="ul-regions__horta">{{ block.settings.horta }}</p>
             </div>
-            <div class="ul-regions__day">
-              {% render 'ul-icon', name: 'clock', size: 12 %}
-              <span>{{ block.settings.day }}</span>
-            </div>
+            {%- if ul_is_available -%}
+              <div class="ul-regions__day">
+                {% render 'ul-icon', name: 'clock', size: 12 %}
+                <span>{{ block.settings.day }}</span>
+              </div>
+            {%- else -%}
+              <div class="ul-regions__day ul-regions__day--locked">
+                {% render 'ul-icon', name: 'lock', size: 12 %}
+                <span>Em breve</span>
+              </div>
+            {%- endif -%}
           </div>
 
           <div class="ul-regions__neighborhoods">
@@ -35,17 +43,24 @@
             {%- endfor -%}
           </div>
 
-          <div class="ul-regions__radius">
-            {% render 'ul-icon', name: 'map-pin', size: 12 %}
-            <span>Raio de entrega: <strong>{{ block.settings.radius }}</strong></span>
-          </div>
+          {%- if ul_is_available -%}
+            <div class="ul-regions__radius">
+              {% render 'ul-icon', name: 'map-pin', size: 12 %}
+              <span>Raio de entrega: <strong>{{ block.settings.radius }}</strong></span>
+            </div>
+          {%- else -%}
+            <div class="ul-regions__unavailable">
+              {% render 'ul-icon', name: 'lock', size: 12 %}
+              <span>Ainda não atendemos esta região. Atendimento em breve.</span>
+            </div>
+          {%- endif -%}
         </div>
       {%- endfor -%}
     </div>
 
     <p class="ul-regions__footer-note">
       Sua região não está listada?
-      <a href="{{ section.settings.contact_link | default: '#' }}" class="ul-regions__contact-link">Entre em contato</a>:
+      <a href="{{ section.settings.contact_link | default: 'https://wa.me/5511952353041' }}" class="ul-regions__contact-link">Entre em contato</a>:
       estamos expandindo nossa operação em São Paulo.
     </p>
   </div>
@@ -107,6 +122,17 @@
   .ul-regions__card:hover {
     border-color: rgb(var(--ul-color-primary-rgb) / 0.3);
     box-shadow: var(--ul-shadow-card-md);
+  }
+
+  .ul-regions__card--locked {
+    background: rgb(var(--ul-color-border-rgb) / 0.2);
+    opacity: 0.6;
+    filter: grayscale(0.5);
+  }
+
+  .ul-regions__card--locked:hover {
+    border-color: rgb(var(--ul-color-border-rgb) / 0.7);
+    box-shadow: none;
   }
 
   .ul-regions__card-head {
@@ -188,6 +214,26 @@
     color: rgb(var(--ul-color-foreground-rgb) / 0.7);
   }
 
+  .ul-regions__day--locked {
+    background: rgb(var(--ul-color-muted-foreground-rgb) / 0.12);
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-regions__unavailable {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgb(var(--ul-color-border-rgb) / 0.5);
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.75rem;
+  }
+
+  .ul-regions__unavailable svg {
+    color: rgb(var(--ul-color-muted-foreground-rgb) / 0.6);
+    flex-shrink: 0;
+  }
+
   .ul-regions__footer-note {
     margin: 2.5rem 0 0;
     text-align: center;
@@ -237,6 +283,7 @@
       "type": "cluster",
       "name": "Cluster regional",
       "settings": [
+        { "type": "checkbox", "id": "available", "label": "Região disponível", "info": "Desmarque para exibir esta região como bloqueada/indisponível (ex: ainda não atendemos).", "default": true },
         { "type": "text", "id": "zone", "label": "Zona" },
         { "type": "text", "id": "horta", "label": "Nome da horta" },
         { "type": "text", "id": "day", "label": "Dia da entrega" },
@@ -249,10 +296,11 @@
     {
       "name": "Entrega por Região",
       "blocks": [
-        { "type": "cluster", "settings": { "zone": "Zona Norte", "horta": "Horta Zona Norte", "day": "Quarta-feira", "radius": "10 km", "neighborhoods": "Santana, Tucuruvi, Tremembé, Vila Maria, Casa Verde, Limão, Brasilândia" } },
-        { "type": "cluster", "settings": { "zone": "Centro Expandido", "horta": "Horta Centro SP", "day": "Quinta-feira", "radius": "8 km", "neighborhoods": "Pinheiros, Vila Madalena, Consolação, Santa Cecília, Bela Vista, Higienópolis, Perdizes" } },
-        { "type": "cluster", "settings": { "zone": "Zona Oeste", "horta": "Horta Zona Oeste", "day": "Terça-feira", "radius": "9 km", "neighborhoods": "Butantã, Lapa, Jaguaré, Vila Leopoldina, Vila Romana, Alto da Lapa" } },
-        { "type": "cluster", "settings": { "zone": "Zona Sul", "horta": "Horta Zona Sul", "day": "Sexta-feira", "radius": "12 km", "neighborhoods": "Vila Mariana, Saúde, Moema, Ibirapuera, Jabaquara, Santo André" } }
+        { "type": "cluster", "settings": { "available": true, "zone": "Zona Norte", "horta": "Horta Zona Norte", "day": "Quarta-feira", "radius": "10 km", "neighborhoods": "Santana, Tucuruvi, Tremembé, Vila Maria, Casa Verde, Limão, Brasilândia" } },
+        { "type": "cluster", "settings": { "available": true, "zone": "Zona Leste", "horta": "Horta Zona Leste", "day": "Segunda-feira", "radius": "11 km", "neighborhoods": "Tatuapé, Vila Matilde, Penha, Itaquera, São Miguel Paulista, Vila Formosa, Aricanduva" } },
+        { "type": "cluster", "settings": { "available": false, "zone": "Centro Expandido", "horta": "Horta Centro SP", "day": "Quinta-feira", "radius": "8 km", "neighborhoods": "Pinheiros, Vila Madalena, Consolação, Santa Cecília, Bela Vista, Higienópolis, Perdizes" } },
+        { "type": "cluster", "settings": { "available": false, "zone": "Zona Oeste", "horta": "Horta Zona Oeste", "day": "Terça-feira", "radius": "9 km", "neighborhoods": "Butantã, Lapa, Jaguaré, Vila Leopoldina, Vila Romana, Alto da Lapa" } },
+        { "type": "cluster", "settings": { "available": false, "zone": "Zona Sul", "horta": "Horta Zona Sul", "day": "Sexta-feira", "radius": "12 km", "neighborhoods": "Vila Mariana, Saúde, Moema, Ibirapuera, Jabaquara, Santo André" } }
       ]
     }
   ]

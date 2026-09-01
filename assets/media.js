@@ -145,6 +145,9 @@ if (!customElements.get('deferred-media')) {
 class ProductModel extends DeferredMedia {
   #abortController = new AbortController();
 
+  /** @type {ModelViewer | undefined} */
+  modelViewerUI;
+
   loadContent() {
     super.loadContent();
 
@@ -173,10 +176,10 @@ class ProductModel extends DeferredMedia {
   }
 
   /**
-   * @param {Error[]} errors
+   * @param {Error | undefined} error
    */
-  async setupModelViewerUI(errors) {
-    if (errors) return;
+  async setupModelViewerUI(error) {
+    if (error) return;
 
     if (!Shopify.ModelViewerUI) {
       await this.#waitForModelViewerUI();
@@ -184,7 +187,7 @@ class ProductModel extends DeferredMedia {
 
     if (!Shopify.ModelViewerUI) return;
 
-    const element = this.querySelector('model-viewer');
+    const element = /** @type {HTMLElement | null} */ (this.querySelector('model-viewer'));
     if (!element) return;
 
     const signal = this.#abortController.signal;
@@ -209,7 +212,7 @@ class ProductModel extends DeferredMedia {
 
     element.addEventListener(
       'click',
-      (/** @type {PointerEvent} */ event) => {
+      (/** @type {MouseEvent} */ event) => {
         const distanceX = Math.abs(event.clientX - pointerStartX);
         const distanceY = Math.abs(event.clientY - pointerStartY);
         const totalDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);

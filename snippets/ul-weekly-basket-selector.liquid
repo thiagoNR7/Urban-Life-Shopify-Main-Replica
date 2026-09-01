@@ -49,12 +49,32 @@
   Adicionar ao carrinho (Etapa 3.6): o link "Escolher Cesta X" de cada
   tamanho disponivel leva `data-variant-id="{{ variant.id }}"` (nunca um
   ID fixo) e `on:click="/addToCart"` - o JS intercepta o clique, faz
-  POST para `Theme.routes.cart_add_url` com `{ items: [{ id, quantity: 1
-  }] }` e, se der certo, redireciona para `Theme.routes.cart_url`
+  POST para `Theme.routes.cart_add_url` com `{ items: [{ id, quantity: 1,
+  properties }] }` e, se der certo, redireciona para `Theme.routes.cart_url`
   (nunca para a pagina do produto). O `href` real (com
   `?variant=variant.id`) continua no link como fallback caso o JS nao
   rode. Cada painel tem seu proprio `<p class="ul-weekly-basket__cart-error"
   role="alert">` para mostrar erro sem `alert()` do navegador.
+
+  Troca de 1 item por cesta (MVP): cada painel P/M/G tem seu proprio
+  widget de troca (`[data-swap-widget]`), com as opcoes de origem/destino
+  geradas 100% a partir de `items_p/m/g` (a mesma lista ja renderizada
+  acima) - nunca inventa item fora da composicao real da semana daquele
+  tamanho, e nunca mistura itens de um tamanho com o widget de outro
+  (cada painel so enxerga a propria lista). O destino nunca pode repetir
+  a origem (a opcao correspondente e desabilitada via JS em
+  assets/ul-weekly-basket-selector.js). A troca e sempre opcional e vale
+  para no maximo 1 par por clique em "Escolher Cesta X"; para outra
+  unidade (com ou sem troca) o cliente configura e adiciona de novo -
+  cada clique gera seu proprio `_ul_config_id` (properties), o que evita
+  que o Shopify funda unidades/configuracoes diferentes numa mesma linha
+  do carrinho mesmo quando as properties visiveis coincidem (ex.: duas
+  unidades sem troca, ou com a mesma troca). Quando ha troca, e enviada
+  tambem a property visivel `Troca solicitada` (some automaticamente no
+  carrinho via `snippets/cart-products.liquid`, que ja sabe renderizar
+  `item.properties`); `_ul_config_id` comeca com `_`, entao a mesma
+  convencao ja existente em cart-products.liquid a esconde da UI do
+  carrinho sem nenhuma alteracao la.
 
   @param {object} product - Produto "Cesta da Semana" do produtor (ja resolvido pela section).
 
@@ -195,6 +215,46 @@
         <p class="ul-weekly-basket__items-empty">Composição da cesta ainda não cadastrada.</p>
       {%- endif -%}
 
+      {%- if items_p.size > 1 -%}
+        <div class="ul-weekly-basket__swap" data-swap-widget data-size="p">
+          <div class="ul-weekly-basket__swap-summary" data-swap-summary hidden>
+            <p class="ul-weekly-basket__swap-summary-text">
+              Troca selecionada:<br>
+              <strong data-swap-summary-value></strong>
+            </p>
+            <button type="button" class="ul-weekly-basket__swap-remove" on:click="/removeSwap">Remover troca</button>
+          </div>
+
+          <div class="ul-weekly-basket__swap-picker" data-swap-picker>
+            <p class="ul-weekly-basket__swap-heading">
+              {% render 'ul-icon', name: 'repeat', size: 14, class: 'ul-weekly-basket__swap-icon' %}
+              Personalize sua cesta
+            </p>
+            <p class="ul-weekly-basket__swap-prompt">Não gosta de algum item? Você pode fazer 1 troca.</p>
+            <div class="ul-weekly-basket__swap-fields">
+              <label class="ul-weekly-basket__swap-field">
+                <span>Trocar</span>
+                <select class="ul-weekly-basket__swap-select" data-swap-origin on:change="/onSwapOriginChange">
+                  <option value="">Selecionar item</option>
+                  {%- for item in items_p -%}
+                    <option value="{{ item | escape }}">{{ item | escape }}</option>
+                  {%- endfor -%}
+                </select>
+              </label>
+              <label class="ul-weekly-basket__swap-field">
+                <span>Por</span>
+                <select class="ul-weekly-basket__swap-select" data-swap-destination on:change="/onSwapDestinationChange" disabled>
+                  <option value="">Selecionar substituto</option>
+                  {%- for item in items_p -%}
+                    <option value="{{ item | escape }}">{{ item | escape }}</option>
+                  {%- endfor -%}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      {%- endif -%}
+
       <div class="ul-weekly-basket__panel-footer">
         {%- if variant_p != blank -%}
           <span class="ul-weekly-basket__price-wrap">
@@ -246,6 +306,46 @@
         </ul>
       {%- else -%}
         <p class="ul-weekly-basket__items-empty">Composição da cesta ainda não cadastrada.</p>
+      {%- endif -%}
+
+      {%- if items_m.size > 1 -%}
+        <div class="ul-weekly-basket__swap" data-swap-widget data-size="m">
+          <div class="ul-weekly-basket__swap-summary" data-swap-summary hidden>
+            <p class="ul-weekly-basket__swap-summary-text">
+              Troca selecionada:<br>
+              <strong data-swap-summary-value></strong>
+            </p>
+            <button type="button" class="ul-weekly-basket__swap-remove" on:click="/removeSwap">Remover troca</button>
+          </div>
+
+          <div class="ul-weekly-basket__swap-picker" data-swap-picker>
+            <p class="ul-weekly-basket__swap-heading">
+              {% render 'ul-icon', name: 'repeat', size: 14, class: 'ul-weekly-basket__swap-icon' %}
+              Personalize sua cesta
+            </p>
+            <p class="ul-weekly-basket__swap-prompt">Não gosta de algum item? Você pode fazer 1 troca.</p>
+            <div class="ul-weekly-basket__swap-fields">
+              <label class="ul-weekly-basket__swap-field">
+                <span>Trocar</span>
+                <select class="ul-weekly-basket__swap-select" data-swap-origin on:change="/onSwapOriginChange">
+                  <option value="">Selecionar item</option>
+                  {%- for item in items_m -%}
+                    <option value="{{ item | escape }}">{{ item | escape }}</option>
+                  {%- endfor -%}
+                </select>
+              </label>
+              <label class="ul-weekly-basket__swap-field">
+                <span>Por</span>
+                <select class="ul-weekly-basket__swap-select" data-swap-destination on:change="/onSwapDestinationChange" disabled>
+                  <option value="">Selecionar substituto</option>
+                  {%- for item in items_m -%}
+                    <option value="{{ item | escape }}">{{ item | escape }}</option>
+                  {%- endfor -%}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
       {%- endif -%}
 
       <div class="ul-weekly-basket__panel-footer">
@@ -301,6 +401,46 @@
         <p class="ul-weekly-basket__items-empty">Composição da cesta ainda não cadastrada.</p>
       {%- endif -%}
 
+      {%- if items_g.size > 1 -%}
+        <div class="ul-weekly-basket__swap" data-swap-widget data-size="g">
+          <div class="ul-weekly-basket__swap-summary" data-swap-summary hidden>
+            <p class="ul-weekly-basket__swap-summary-text">
+              Troca selecionada:<br>
+              <strong data-swap-summary-value></strong>
+            </p>
+            <button type="button" class="ul-weekly-basket__swap-remove" on:click="/removeSwap">Remover troca</button>
+          </div>
+
+          <div class="ul-weekly-basket__swap-picker" data-swap-picker>
+            <p class="ul-weekly-basket__swap-heading">
+              {% render 'ul-icon', name: 'repeat', size: 14, class: 'ul-weekly-basket__swap-icon' %}
+              Personalize sua cesta
+            </p>
+            <p class="ul-weekly-basket__swap-prompt">Não gosta de algum item? Você pode fazer 1 troca.</p>
+            <div class="ul-weekly-basket__swap-fields">
+              <label class="ul-weekly-basket__swap-field">
+                <span>Trocar</span>
+                <select class="ul-weekly-basket__swap-select" data-swap-origin on:change="/onSwapOriginChange">
+                  <option value="">Selecionar item</option>
+                  {%- for item in items_g -%}
+                    <option value="{{ item | escape }}">{{ item | escape }}</option>
+                  {%- endfor -%}
+                </select>
+              </label>
+              <label class="ul-weekly-basket__swap-field">
+                <span>Por</span>
+                <select class="ul-weekly-basket__swap-select" data-swap-destination on:change="/onSwapDestinationChange" disabled>
+                  <option value="">Selecionar substituto</option>
+                  {%- for item in items_g -%}
+                    <option value="{{ item | escape }}">{{ item | escape }}</option>
+                  {%- endfor -%}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      {%- endif -%}
+
       <div class="ul-weekly-basket__panel-footer">
         {%- if variant_g != blank -%}
           <span class="ul-weekly-basket__price-wrap">
@@ -343,7 +483,10 @@
 
   .ul-weekly-basket__tabs {
     display: flex;
-    gap: 6px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-base);
+    background: var(--ul-color-background);
+    overflow: hidden;
   }
 
   .ul-weekly-basket__tab {
@@ -353,16 +496,24 @@
     align-items: center;
     justify-content: center;
     gap: 1px;
-    min-height: 44px;
+    min-height: 56px;
     padding: 6px 8px;
-    border: 1px solid var(--ul-color-border);
-    border-radius: var(--ul-radius-base);
-    background: var(--ul-color-background);
+    border: none;
+    border-left: 1px solid var(--ul-color-border);
+    background: transparent;
     color: var(--ul-color-foreground);
     font-family: var(--ul-font-family);
     text-align: center;
     cursor: pointer;
-    transition: background var(--ul-transition-fast), color var(--ul-transition-fast), border-color var(--ul-transition-fast);
+    transition: background 180ms ease, color 180ms ease;
+  }
+
+  .ul-weekly-basket__tab:first-child {
+    border-left: none;
+  }
+
+  .ul-weekly-basket__tab:hover {
+    background: rgb(var(--ul-color-primary-rgb) / 0.06);
   }
 
   .ul-weekly-basket__tab-letter {
@@ -383,13 +534,16 @@
 
   .ul-weekly-basket__tab[aria-selected='true'] {
     background: var(--ul-color-primary);
-    border-color: var(--ul-color-primary);
     color: var(--ul-color-primary-foreground);
+  }
+
+  .ul-weekly-basket__tab[aria-selected='true']:hover {
+    background: var(--ul-color-primary);
   }
 
   .ul-weekly-basket__tab:focus-visible {
     outline: 2px solid var(--ul-color-primary);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   .ul-weekly-basket__panel-head {
@@ -416,11 +570,17 @@
   .ul-weekly-basket__items {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 1rem;
-    row-gap: 3px;
-    margin: 0.5rem 0 0;
+    column-gap: 1.5rem;
+    row-gap: 8px;
+    margin: 0.75rem 0 0;
     padding: 0;
     list-style: none;
+  }
+
+  @media (max-width: 380px) {
+    .ul-weekly-basket__items {
+      grid-template-columns: 1fr;
+    }
   }
 
   .ul-weekly-basket__items li {
@@ -463,9 +623,10 @@
   }
 
   .ul-weekly-basket__price {
-    font-size: 1.125rem;
+    font-size: 1.375rem;
     font-weight: var(--ul-font-weight-bold);
     color: var(--ul-color-primary);
+    letter-spacing: -0.01em;
   }
 
   .ul-weekly-basket__availability {
@@ -510,8 +671,117 @@
     display: none;
   }
 
+  .ul-weekly-basket__swap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--ul-color-border);
+  }
+
+  .ul-weekly-basket__swap-heading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.8125rem;
+    font-weight: var(--ul-font-weight-bold);
+  }
+
+  .ul-weekly-basket__swap-icon {
+    flex-shrink: 0;
+    color: var(--ul-color-primary);
+  }
+
+  .ul-weekly-basket__swap-prompt {
+    margin: 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.8125rem;
+  }
+
+  .ul-weekly-basket__swap-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .ul-weekly-basket__swap-field {
+    display: flex;
+    flex: 1 1 140px;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--ul-font-family);
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-medium);
+    color: var(--ul-color-muted-foreground);
+  }
+
+  .ul-weekly-basket__swap-select {
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: 0.75rem;
+    background: var(--ul-color-background);
+    color: var(--ul-color-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.8125rem;
+    transition: border-color 180ms ease;
+  }
+
+  .ul-weekly-basket__swap-select:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 1px;
+  }
+
+  .ul-weekly-basket__swap-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .ul-weekly-basket__swap-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 0.75rem;
+    background: rgb(var(--ul-color-primary-rgb) / 0.08);
+  }
+
+  .ul-weekly-basket__swap-summary[hidden] {
+    display: none;
+  }
+
+  .ul-weekly-basket__swap-summary-text {
+    margin: 0;
+    color: var(--ul-color-foreground);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .ul-weekly-basket__swap-remove {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--ul-color-primary);
+    font-family: var(--ul-font-family);
+    font-size: 0.75rem;
+    font-weight: var(--ul-font-weight-semibold);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .ul-weekly-basket__swap-picker[hidden] {
+    display: none;
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .ul-weekly-basket__tab {
+    .ul-weekly-basket__tab,
+    .ul-weekly-basket__swap-select {
       transition: none;
     }
   }

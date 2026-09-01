@@ -9,10 +9,9 @@
   assign ul_hero_button_label = section.settings.button_label
   assign ul_hero_button_link = section.settings.button_link | default: routes.all_products_collection_url
   assign ul_hero_button_label_2 = section.settings.button_label_2
-  assign ul_hero_button_link_2 = section.settings.button_link_2 | default: routes.root_url
+  assign ul_hero_button_link_2 = section.settings.button_link_2 | default: '#como-funciona'
   assign ul_hero_social_count = section.settings.social_proof_count
   assign ul_hero_social_text = section.settings.social_proof_text
-  assign ul_hero_media_label = section.settings.media_label
   assign ul_hero_fallback_images = 'ul-hero-carousel-1.jpg|ul-hero-carousel-2.jpg|ul-hero-carousel-3.jpg' | split: '|'
   assign ul_hero_image_blocks = section.blocks | where: 'type', 'image'
   assign ul_hero_avatar_blocks = section.blocks | where: 'type', 'avatar'
@@ -55,7 +54,7 @@
             {%- endif -%}
 
             {%- if ul_hero_button_label_2 != blank -%}
-              <a href="{{ ul_hero_button_link_2 }}" class="ul-btn ul-btn--solid ul-btn--lg ul-btn--medium">
+              <a href="{{ ul_hero_button_link_2 }}" class="ul-btn ul-hero__btn-secondary ul-btn--lg ul-btn--medium">
                 {{ ul_hero_button_label_2 }}
               </a>
             {%- endif -%}
@@ -113,7 +112,7 @@
                     class: 'ul-hero__image',
                     loading: ul_hero_loading,
                     widths: '400, 600, 800',
-                    sizes: '(min-width: 1024px) 384px, 320px'
+                    sizes: '(min-width: 1024px) 512px, 320px'
                 }}
               {%- else -%}
                 <img
@@ -129,12 +128,6 @@
           {%- endfor -%}
 
           <div class="ul-hero__overlay" aria-hidden="true"></div>
-
-          {%- if ul_hero_media_label != blank -%}
-            <div class="ul-hero__label">
-              <p>{{ ul_hero_media_label }}</p>
-            </div>
-          {%- endif -%}
         </div>
 
         {%- if ul_hero_image_blocks.size > 1 -%}
@@ -181,7 +174,7 @@
 
   @media (min-width: 1024px) {
     .ul-hero__grid {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 0.9fr 1.1fr;
       gap: 5rem;
     }
   }
@@ -257,6 +250,16 @@
     }
   }
 
+  .ul-hero__btn-secondary {
+    background: var(--ul-color-secondary);
+    color: var(--ul-color-secondary-foreground);
+  }
+
+  .ul-hero__btn-secondary:hover,
+  .ul-hero__btn-secondary:focus-visible {
+    background: var(--ul-color-muted);
+  }
+
   .ul-hero__social {
     display: flex;
     align-items: center;
@@ -320,11 +323,18 @@
   .ul-hero__frame {
     position: relative;
     width: 100%;
-    max-width: 24rem;
+    max-width: 26.5rem;
     aspect-ratio: 4 / 5;
     overflow: hidden;
     border-radius: var(--ul-radius-lg);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  @media (min-width: 1024px) {
+    .ul-hero__frame {
+      max-width: 32rem;
+      aspect-ratio: 1 / 1;
+    }
   }
 
   .ul-hero__slide {
@@ -350,23 +360,6 @@
     inset: 0;
     background: linear-gradient(to top, rgb(0 0 0 / 0.2), transparent 60%);
     pointer-events: none;
-  }
-
-  .ul-hero__label {
-    position: absolute;
-    left: 1rem;
-    bottom: 1rem;
-    padding: 6px 12px;
-    border-radius: var(--ul-radius-pill);
-    background: rgb(var(--ul-color-background-rgb) / 0.9);
-    backdrop-filter: blur(4px);
-  }
-
-  .ul-hero__label p {
-    margin: 0;
-    font-size: 0.75rem;
-    font-weight: var(--ul-font-weight-medium);
-    color: var(--ul-color-foreground);
   }
 
   .ul-hero__dots {
@@ -447,7 +440,7 @@
       "type": "text",
       "id": "button_label",
       "label": "Texto do botão",
-      "default": "Ver seleção da semana"
+      "default": "Comprar agora"
     },
     {
       "type": "url",
@@ -477,23 +470,13 @@
       "type": "text",
       "id": "social_proof_count",
       "label": "Número em destaque",
-      "default": "500+"
+      "default": "100+"
     },
     {
       "type": "text",
       "id": "social_proof_text",
       "label": "Texto",
       "default": "clientes em São Paulo"
-    },
-    {
-      "type": "header",
-      "content": "Imagem"
-    },
-    {
-      "type": "text",
-      "id": "media_label",
-      "label": "Selo sobre a imagem",
-      "default": "Seleção fresca da semana"
     }
   ],
   "blocks": [

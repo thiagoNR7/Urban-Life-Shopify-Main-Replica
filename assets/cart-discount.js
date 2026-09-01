@@ -104,7 +104,13 @@ class CartDiscount extends Component {
       if (section) {
         const codes = Array.from(discountCodes)
           .map((element) => (element instanceof HTMLLIElement ? element.dataset.discountCode : null))
-          .filter(Boolean);
+          .filter(
+            /**
+             * @param {string | null | undefined} value
+             * @returns {value is string}
+             */
+            (value) => typeof value === 'string'
+          );
         // Before morphing, we need to check if the shipping discount is applicable in the UI
         // we check the liquid logic compared to the cart payload to assess whether we leveraged
         // a valid shipping discount code.

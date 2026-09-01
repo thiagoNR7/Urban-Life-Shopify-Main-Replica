@@ -2,7 +2,7 @@
   Renders a small line-style icon used across the ul-* Urban Life
   sections (stats bar, badges, how-it-works, delivery regions).
 
-  @param {string} name - One of: leaf, sprout, truck, home, users, map-pin, clock, arrow-right, search, close.
+  @param {string} name - One of: leaf, sprout, truck, home, users, map-pin, clock, lock, arrow-right, search, close, link, repeat, user.
   @param {string} [class] - Additional classes appended to the svg element.
   @param {number} [size] - Width/height in px. Default 24.
 
@@ -54,6 +54,9 @@
     {%- when 'clock' -%}
       <circle cx="12" cy="12" r="9"></circle>
       <path d="M12 7v5l3.5 2"></path>
+    {%- when 'lock' -%}
+      <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+      <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
     {%- when 'arrow-right' -%}
       <path d="M5 12h14"></path>
       <path d="m13 5 7 7-7 7"></path>
@@ -63,5 +66,16 @@
     {%- when 'close' -%}
       <path d="M18 6 6 18"></path>
       <path d="m6 6 12 12"></path>
+    {%- when 'link' -%}
+      <path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"></path>
+      <path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"></path>
+    {%- when 'repeat' -%}
+      <path d="m17 2 4 4-4 4"></path>
+      <path d="M3 11v-1a4 4 0 0 1 4-4h14"></path>
+      <path d="m7 22-4-4 4-4"></path>
+      <path d="M21 13v1a4 4 0 0 1-4 4H3"></path>
+    {%- when 'user' -%}
+      <circle cx="12" cy="8" r="4"></circle>
+      <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"></path>
   {%- endcase -%}
 </svg>

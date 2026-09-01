@@ -1,0 +1,212 @@
+{%- doc -%}
+  Bloco de divulgacao da pagina do produtor (Etapa 3.13 - Urban Life).
+  Mostra o link publico/canonical da PROPRIA pagina atual (nunca um
+  dominio ou produtor fixo) num input readonly, com botao "Copiar link"
+  (Clipboard API com fallback via selecao + document.execCommand) e um
+  botao "Compartilhar" que so aparece quando o navegador suporta a Web
+  Share API (feature-detection em assets/ul-producer-share.js - sem
+  suporte, o botao continua `hidden` e "Copiar link" e o unico caminho,
+  que ja cobre 100% dos casos, incluindo desktop).
+
+  Redesign visual (Etapa 3.14): so cores/radius/sombra/tipografia/copy
+  mudaram aqui (cartao branco compacto, icone `link` verde no lugar do
+  emoji 🔗, textos levemente ajustados) - `ref`, `on:click`, `on:focus`,
+  `on:change` e todo `data-*` continuam identicos aos que
+  assets/ul-producer-share.js espera, entao a logica nao foi tocada.
+
+  @param {string} brand_title - Nome de exibicao da horta (nome_horta ou nome, ja resolvido pela section).
+  @param {string} share_url - URL publica/canonical da pagina atual do produtor (passar `canonical_url`).
+
+  @example
+  {% render 'ul-producer-share', brand_title: brand_title, share_url: canonical_url %}
+{%- enddoc -%}
+
+{%- liquid
+  assign ul_share_text = 'Conheça a ' | append: brand_title | append: ' na Urban Life 🌱'
+-%}
+
+<ul-producer-share-component class="ul-producer-share">
+  <p class="ul-producer-share__heading">
+    {% render 'ul-icon', name: 'link', size: 16, class: 'ul-producer-share__icon' %}
+    Divulgue esta horta
+  </p>
+  <p class="ul-producer-share__text">Ajude mais pessoas a conhecer esta produção.</p>
+
+  <div class="ul-producer-share__row">
+    <input
+      type="text"
+      class="ul-producer-share__input"
+      value="{{ share_url }}"
+      readonly
+      aria-label="Link público de {{ brand_title }}"
+      ref="input"
+      on:focus="/selectInput"
+    >
+    <button
+      type="button"
+      class="ul-producer-share__copy"
+      ref="copyButton"
+      aria-live="polite"
+      on:click="/copyLink"
+    >Copiar</button>
+  </div>
+
+  <button
+    type="button"
+    class="ul-producer-share__native"
+    ref="shareButton"
+    hidden
+    data-share-title="{{ brand_title | escape }}"
+    data-share-text="{{ ul_share_text | escape }}"
+    data-share-url="{{ share_url | escape }}"
+    on:click="/nativeShare"
+  >
+    {% render 'ul-icon', name: 'link', size: 14 %}
+    Compartilhar horta
+  </button>
+</ul-producer-share-component>
+
+<script src="{{ 'ul-producer-share.js' | asset_url }}" type="module"></script>
+
+{% stylesheet %}
+  .ul-producer-share {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    background: var(--ul-color-white);
+    border: 1px solid var(--ul-color-border);
+    flex-shrink: 0;
+  }
+
+  .ul-producer-share__heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-family: var(--ul-font-family);
+    font-size: 0.9375rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-producer-share__icon {
+    flex-shrink: 0;
+    color: var(--ul-color-primary);
+  }
+
+  .ul-producer-share__text {
+    margin: 0;
+    color: var(--ul-color-muted-foreground);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .ul-producer-share__row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .ul-producer-share__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--ul-color-border);
+    border-radius: var(--ul-radius-base);
+    background: var(--ul-color-background);
+    color: var(--ul-color-muted-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.8125rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: text;
+  }
+
+  .ul-producer-share__input:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+  }
+
+  .ul-producer-share__copy {
+    flex-shrink: 0;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--ul-color-primary);
+    border-radius: var(--ul-radius-base);
+    background: var(--ul-color-background);
+    color: var(--ul-color-primary);
+    font-family: var(--ul-font-family);
+    font-size: 0.8125rem;
+    font-weight: var(--ul-font-weight-semibold);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--ul-transition-fast), color var(--ul-transition-fast);
+  }
+
+  .ul-producer-share__copy:hover {
+    background: var(--ul-color-primary);
+    color: var(--ul-color-primary-foreground);
+  }
+
+  .ul-producer-share__copy[data-copied='true'] {
+    border-color: var(--ul-color-olive-light);
+    color: var(--ul-color-olive-light);
+    background: var(--ul-color-background);
+  }
+
+  .ul-producer-share__native {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: none;
+    border-radius: var(--ul-radius-base);
+    background: var(--ul-color-primary);
+    color: var(--ul-color-primary-foreground);
+    font-family: var(--ul-font-family);
+    font-size: 0.8125rem;
+    font-weight: var(--ul-font-weight-semibold);
+    cursor: pointer;
+    transition: opacity var(--ul-transition-fast);
+  }
+
+  .ul-producer-share__native:hover {
+    opacity: 0.9;
+  }
+
+  .ul-producer-share__native[hidden] {
+    display: none;
+  }
+
+  .ul-producer-share__copy:focus-visible,
+  .ul-producer-share__native:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 479px) {
+    .ul-producer-share__row {
+      flex-wrap: wrap;
+    }
+
+    .ul-producer-share__input {
+      flex-basis: 100%;
+    }
+
+    .ul-producer-share__copy {
+      flex: 1 1 auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ul-producer-share__copy,
+    .ul-producer-share__native {
+      transition: none;
+    }
+  }
+{% endstylesheet %}

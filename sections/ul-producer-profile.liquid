@@ -8,18 +8,27 @@
   nome_horta, bairro, regiao, descricao_curta, historia, selo_origem,
   foto_capa, foto_card, foto_perfil, foto_cultivos.
 
-  Layout principal em duas colunas no desktop (>=1000px): carrossel de
-  imagens (snippet ul-producer-gallery) a esquerda (~60%), painel
-  compacto (voltar + identidade + sinopse + "Selecao da semana") a
-  direita (~40%). Altura NATURAL (grid `align-items: start`, sem
-  `height` fixa no container nem em cascata nos filhos) - so a MOLDURA
-  do carrossel tem altura controlada (clamp 380-500px desktop, 360-500px
-  mobile, compacto tipo homepage) e overflow:hidden, para respeitar o
-  border-radius da imagem; o resto da pagina flui normalmente e o
-  documento cresce conforme o conteudo (sem overflow:hidden em
-  html/body/secao/coluna direita em lugar nenhum). Abaixo de 1000px
-  empilha em coluna unica (carrossel, depois conteudo), com scroll
-  vertical normal.
+  Layout principal via CSS Grid com `grid-template-areas` (Etapa 3.14),
+  nao um simples grid de 2 colunas - o motivo e permitir uma ORDEM
+  diferente no mobile sem duplicar markup nem usar JS/position:absolute:
+  3 filhos diretos de `.ul-producer-profile__layout`
+  (`.ul-producer-profile__identity-block`,
+  `.ul-producer-profile__media-col`, `.ul-producer-profile__content-block`),
+  cada um com `grid-area` fixo.
+  - Mobile/tablet (<1000px): 1 coluna, areas empilhadas na ordem
+    "identity" -> "media" -> "content" (voltar + nome/localizacao/badge,
+    depois carrossel + "Divulgue esta horta", depois bio + "Cestas da
+    Horta").
+  - Desktop (>=1000px): 2 colunas (~60/40 via `minmax(0,3fr) minmax(380px,2fr)`),
+    areas "media identity" / "media content" - media ocupa a coluna
+    esquerda inteira (as 2 linhas), identity e content empilham na
+    coluna direita, reproduzindo visualmente o antigo "painel unico".
+  Altura NATURAL em ambos os casos (`align-items: start` no grid, sem
+  `height` fixa em nenhum container nem cascata nos filhos) - so a
+  MOLDURA do carrossel tem altura controlada (clamp 380-500px desktop,
+  360-500px mobile) e overflow:hidden, para respeitar o border-radius da
+  imagem; o resto da pagina flui normalmente conforme o conteudo (sem
+  overflow:hidden em html/body/secao/colunas em lugar nenhum).
 
   Selecao da semana (Etapa 3.10): a Urban Life vende por cesta (P/M/G),
   nao por produto avulso. Modelo Shopify: 1 produto "Cesta da Semana"
@@ -37,6 +46,47 @@
   condicionados a variante existir, sem nunca esconder o tamanho
   inteiro). Passo a passo de configuracao no Admin: ver mensagem final
   enviada junto com este ajuste (nao faz parte do codigo).
+
+  Produtos especiais/artesanais (Etapa 3.12): mesma associacao
+  produto->produtor de sempre (custom.produtor), sem segunda estrutura
+  de vinculo. Dentro do MESMO loop que ja resolve weekly/fallback, cada
+  produto do produtor e classificado por custom.tipo_produto ('cesta'
+  ou 'produto_especial'); produto sem esse metafield preenchido cai no
+  fallback 'cesta' (comportamento antigo preservado - continua elegivel
+  a weekly_product/fallback_product, nunca desaparece). Os
+  'produto_especial' sao renderizados com ul-producer-product-card
+  (mesmo card, sem duplicar UI) direto dentro de um `capture`, para
+  saber se a grade "Produtos da Horta" tem algo a mostrar sem precisar
+  de um segundo loop nem de array.
+
+  Compartilhamento + Open Graph dinamico (Etapa 3.13): `page_title`,
+  `page_description` e `page_image` sao globais nativos do Shopify lidos
+  por snippets/meta-tags.liquid (incluido no <head> via layout/theme.liquid)
+  - atribui-los aqui, no topo da secao, e o jeito documentado pelo
+  proprio Shopify de tornar esses metatags dinamicos numa pagina de
+  template JSON, sem duplicar nenhuma tag nova. `page_title`/
+  `page_description` reaproveitam brand_title/synopsis (mesmos dados ja
+  exibidos na pagina); `page_image` reaproveita a MESMA ordem de
+  prioridade de foto ja usada em snippets/ul-producer-gallery.liquid
+  (foto_capa > foto_cultivos > foto_perfil > foto_card), com
+  settings.logo como ultimo fallback (nunca imagem hardcoded, nunca
+  produtor especifico). `og:url` continua vindo de `canonical_url`
+  (global nativo, ja resolve pro dominio principal configurado na loja -
+  nunca myshopify.com hardcoded). O bloco visivel de divulgacao
+  (link publico + copiar + compartilhar) fica em
+  snippets/ul-producer-share.liquid.
+
+  Redesign visual (Etapa 3.14): o bloco de divulgacao foi movido para
+  dentro de `.ul-producer-profile__media-col`, logo abaixo do carrossel
+  (nunca mais dentro do antigo "painel" da direita). Isso e so
+  reorganizacao de markup/CSS (a mudanca de flex de 2 filhos para grid
+  de 3 areas nomeadas, descrita acima, existe justamente para viabilizar
+  essa mudanca de posicao sem baguncar a ordem de leitura no mobile);
+  nenhuma logica de compartilhamento, OG, produtor, cesta, troca ou
+  produto especial foi alterada nesta etapa - so aparencia (cores,
+  radius, sombra, tipografia, espacamento) dos proprios snippets
+  ul-producer-share.liquid, ul-weekly-basket-selector.liquid e
+  ul-producer-product-card.liquid, que ja eram exclusivos desta pagina.
 {%- endcomment -%}
 
 {{ 'ul-tokens.css' | asset_url | stylesheet_tag }}
@@ -52,6 +102,22 @@
   if synopsis == blank
     assign synopsis = producer.historia.value
   endif
+
+  # theme-check-disable UnusedAssign
+  # page_title/page_description/page_image sao globais nativos do Shopify,
+  # lidos por snippets/meta-tags.liquid (incluido no <head> via
+  # layout/theme.liquid) - nao sao "nao usados", so nao sao referenciados
+  # de novo dentro deste MESMO arquivo.
+  assign og_description_source = synopsis | strip_newlines | strip_html | strip
+  if og_description_source != blank
+    assign page_description = og_description_source | truncate: 160
+  else
+    assign page_description = 'Conheça a ' | append: brand_title | append: ' e compre alimentos frescos pela Urban Life.'
+  endif
+
+  assign page_title = brand_title | append: ' | Urban Life'
+  assign page_image = producer.foto_capa.value | default: producer.foto_cultivos.value | default: producer.foto_perfil.value | default: producer.foto_card.value | default: settings.logo
+  # theme-check-enable UnusedAssign
 -%}
 
 {%- comment -%}
@@ -61,38 +127,60 @@
   marcado; senao usa o primeiro encontrado. Nunca mostra produto de
   outro produtor, ja que so entram no loop os que batem
   referenced_producer.system.id == producer.system.id.
+
+  Produtos especiais: classificados por custom.tipo_produto dentro do
+  mesmo loop; sem esse metafield preenchido, o produto e tratado como
+  'cesta' (fallback conservador - continua concorrendo a
+  weekly_product/fallback_product exatamente como antes desta etapa).
 {%- endcomment -%}
 {%- liquid
   assign weekly_product = blank
   assign fallback_product = blank
+-%}
 
-  for product in collections.all.products
-    assign referenced_producer = product.metafields.custom.produtor.value
+{%- capture special_products_markup -%}
+  {%- for product in collections.all.products -%}
+    {%- liquid
+      assign referenced_producer = product.metafields.custom.produtor.value
+    -%}
 
-    if referenced_producer != blank and referenced_producer.system.id == producer.system.id
-      if fallback_product == blank
-        assign fallback_product = product
-      endif
+    {%- if referenced_producer != blank and referenced_producer.system.id == producer.system.id -%}
+      {%- liquid
+        assign product_type = product.metafields.custom.tipo_produto.value | default: 'cesta'
+      -%}
 
-      if weekly_product == blank and product.metafields.custom.selecao_da_semana.value == true
-        assign weekly_product = product
-      endif
-    endif
-  endfor
+      {%- if product_type == 'produto_especial' -%}
+        {% render 'ul-producer-product-card', product: product %}
+      {%- else -%}
+        {%- liquid
+          if fallback_product == blank
+            assign fallback_product = product
+          endif
 
+          if weekly_product == blank and product.metafields.custom.selecao_da_semana.value == true
+            assign weekly_product = product
+          endif
+        -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endcapture -%}
+
+{%- liquid
   if weekly_product == blank
     assign weekly_product = fallback_product
+  endif
+
+  assign has_special_products = false
+  if special_products_markup != blank
+    assign has_special_products = true
   endif
 -%}
 
 <section class="ul-producer-profile">
   <div class="ul-container ul-producer-profile__inner">
     <div class="ul-producer-profile__layout">
-      <div class="ul-producer-profile__gallery-col">
-        {% render 'ul-producer-gallery', producer: producer, brand_title: brand_title %}
-      </div>
-
-      <div class="ul-producer-profile__panel">
+      <div class="ul-producer-profile__identity-block">
         <a href="{{ pages.produtores.url | default: '/pages/produtores' | append: '?view=produtores' }}" class="ul-producer-profile__back">
           <span class="ul-producer-profile__back-icon">{% render 'ul-icon', name: 'arrow-right', size: 16 %}</span>
           Voltar para Produtores
@@ -114,30 +202,50 @@
             <span class="ul-badge ul-producer-profile__seal">{{ producer.selo_origem.value }}</span>
           {%- endif -%}
         </div>
+      </div>
 
+      <div class="ul-producer-profile__media-col">
+        <div class="ul-producer-profile__gallery-col">
+          {% render 'ul-producer-gallery', producer: producer, brand_title: brand_title %}
+        </div>
+
+        {% render 'ul-producer-share', brand_title: brand_title, share_url: canonical_url %}
+      </div>
+
+      <div class="ul-producer-profile__content-block">
         {%- if synopsis != blank -%}
           <p class="ul-producer-profile__intro" title="{{ synopsis | strip_newlines | strip_html | escape }}">
             {{- synopsis | strip_newlines | strip_html -}}
           </p>
         {%- endif -%}
 
-        <div class="ul-producer-profile__selection">
-          <div class="ul-producer-profile__selection-head">
-            <h2 class="ul-producer-profile__selection-title">
-              {% render 'ul-icon', name: 'leaf', size: 18, class: 'ul-producer-profile__selection-icon' %}
-              Seleção da semana
-            </h2>
-            <p class="ul-producer-profile__selection-subtitle">Escolha o tamanho ideal para você.</p>
-          </div>
+        {%- if weekly_product != blank -%}
+          <div class="ul-producer-profile__selection">
+            <div class="ul-producer-profile__selection-head">
+              <h2 class="ul-producer-profile__selection-title">
+                {% render 'ul-icon', name: 'leaf', size: 18, class: 'ul-producer-profile__selection-icon' %}
+                Cestas da Horta
+              </h2>
+              <p class="ul-producer-profile__selection-subtitle">Escolha o tamanho ideal para você.</p>
+            </div>
 
-          {%- if weekly_product == blank -%}
-            <p class="ul-producer-profile__products-empty">Nenhum produto disponível deste produtor no momento.</p>
-          {%- else -%}
             {% render 'ul-weekly-basket-selector', product: weekly_product %}
-          {%- endif -%}
-        </div>
+          </div>
+        {%- endif -%}
       </div>
     </div>
+
+    {%- if has_special_products -%}
+      <div class="ul-producer-profile__products">
+        <h2 class="ul-producer-profile__products-heading">
+          {% render 'ul-icon', name: 'sprout', size: 18, class: 'ul-producer-profile__products-icon' %}
+          Produtos da Horta
+        </h2>
+        <div class="ul-producer-profile__products-grid">
+          {{ special_products_markup }}
+        </div>
+      </div>
+    {%- endif -%}
   </div>
 </section>
 
@@ -154,8 +262,12 @@
   }
 
   .ul-producer-profile__layout {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'identity'
+      'media'
+      'content';
     gap: 1.5rem;
     height: auto;
     min-height: 0;
@@ -164,11 +276,37 @@
 
   @media (min-width: 1000px) {
     .ul-producer-profile__layout {
-      display: grid;
       grid-template-columns: minmax(0, 3fr) minmax(380px, 2fr);
+      grid-template-areas:
+        'media identity'
+        'media content';
       gap: clamp(1.5rem, 3vw, 3rem);
       align-items: start;
     }
+  }
+
+  .ul-producer-profile__identity-block {
+    grid-area: identity;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .ul-producer-profile__media-col {
+    grid-area: media;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .ul-producer-profile__content-block {
+    grid-area: content;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
   }
 
   .ul-producer-profile__gallery-col {
@@ -187,32 +325,20 @@
     }
   }
 
-  .ul-producer-profile__panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-    min-width: 0;
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-    position: static;
-  }
-
   .ul-producer-profile__back {
     display: inline-flex;
     align-self: flex-start;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     min-height: 44px;
-    padding: 0 14px;
-    border-radius: var(--ul-radius-pill);
-    background: var(--ul-color-secondary);
-    color: var(--ul-color-primary);
+    padding: 0 2px;
+    color: var(--ul-color-muted-foreground);
     font-family: var(--ul-font-family);
     font-size: 0.875rem;
     font-weight: var(--ul-font-weight-medium);
     text-decoration: none;
     flex-shrink: 0;
+    transition: color var(--ul-transition-fast);
   }
 
   .ul-producer-profile__back-icon {
@@ -222,7 +348,13 @@
 
   .ul-producer-profile__back:hover,
   .ul-producer-profile__back:focus-visible {
-    text-decoration: underline;
+    color: var(--ul-color-primary);
+  }
+
+  .ul-producer-profile__back:focus-visible {
+    outline: 2px solid var(--ul-color-primary);
+    outline-offset: 2px;
+    border-radius: var(--ul-radius-base);
   }
 
   .ul-producer-profile__identity {
@@ -236,10 +368,11 @@
   .ul-producer-profile__name {
     margin: 0;
     font-family: var(--ul-font-family);
-    font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem);
+    font-size: clamp(1.75rem, 1.35rem + 1.6vw, 2.375rem);
     font-weight: var(--ul-font-weight-bold);
     color: var(--ul-color-foreground);
-    line-height: 1.15;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
   }
 
   .ul-producer-profile__responsible {
@@ -268,8 +401,9 @@
     -webkit-line-clamp: 3;
     overflow: hidden;
     margin: 0;
-    font-size: 0.9375rem;
-    line-height: 1.5;
+    max-width: 42rem;
+    font-size: 1rem;
+    line-height: 1.65;
     color: var(--ul-color-foreground);
     flex-shrink: 0;
   }
@@ -277,18 +411,19 @@
   .ul-producer-profile__selection {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 1rem;
+    gap: 1rem;
+    padding: 1.5rem;
     border-radius: var(--ul-radius-lg);
-    background: rgb(var(--ul-color-primary-rgb) / 0.05);
-    border: 1px solid rgb(var(--ul-color-primary-rgb) / 0.15);
+    background: var(--ul-color-white);
+    border: 1px solid var(--ul-color-border);
+    box-shadow: var(--ul-shadow-card-sm);
     flex-shrink: 0;
   }
 
   .ul-producer-profile__selection-head {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
   }
 
   .ul-producer-profile__selection-title {
@@ -316,6 +451,52 @@
     margin: 0;
     color: var(--ul-color-muted-foreground);
     font-size: 0.9375rem;
+  }
+
+  .ul-producer-profile__products {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--ul-color-border);
+  }
+
+  @media (min-width: 1000px) {
+    .ul-producer-profile__products {
+      margin-top: 2rem;
+      padding-top: 2rem;
+    }
+  }
+
+  .ul-producer-profile__products-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 1.25rem;
+    font-family: var(--ul-font-family);
+    font-size: 1.25rem;
+    font-weight: var(--ul-font-weight-bold);
+    color: var(--ul-color-foreground);
+  }
+
+  .ul-producer-profile__products-icon {
+    color: var(--ul-color-primary);
+  }
+
+  .ul-producer-profile__products-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    .ul-producer-profile__products-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ul-producer-profile__products-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 {% endstylesheet %}
 
